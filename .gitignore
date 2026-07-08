@@ -1,0 +1,53 @@
+# Python/cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
+
+# IDE/editor
+.idea/
+.vscode/
+.claude/
+
+# Local environments and compiled caches
+py10/
+.venv/
+venv/
+env/
+unsloth_compiled_cache/
+
+# Logs and runtime output
+*.log
+*_run.log
+*.png
+
+# Large datasets
+*.jsonl
+*.npz
+
+# Model weights/checkpoints/adapters
+models/
+qwen-*/
+*.safetensors
+*.pth
+*.pt
+*.bin
+*.ckpt
+
+# Generated experiment outputs
+*_results/
+*_result.png
+*_results_*/
+E0_results/
+Gate1_results*/
+H1_belief*/
+H1_seed_aggregate/
+eval_results/
+xai_visualizations/
+list/
+
+# OS/temp
+.DS_Store
+*.tmp
+*.bak

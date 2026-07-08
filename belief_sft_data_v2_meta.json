@@ -1,0 +1,27 @@
+{
+  "records": 7500,
+  "train_records": 6750,
+  "eval_records": 750,
+  "output": "belief_sft_data_v2.jsonl",
+  "train_output": "belief_sft_data_v2_train.jsonl",
+  "eval_output": "belief_sft_data_v2_eval.jsonl",
+  "label_counts": {
+    "uncertain": 2500,
+    "no": 2500,
+    "yes": 2500
+  },
+  "shanten_counts": {
+    "1": 2330,
+    "5": 386,
+    "0": 490,
+    "4": 1355,
+    "3": 728,
+    "6": 530,
+    "2": 1391,
+    "8": 82,
+    "7": 115,
+    "9": 11,
+    "-1": 82
+  },
+  "format": "chat messages; assistant content is strict JSON for B_phi"
+}

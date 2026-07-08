@@ -1,0 +1,37 @@
+{
+  "records": 18001,
+  "train_records": 12000,
+  "eval_records": 6001,
+  "output": "belief_sft_data_v3.jsonl",
+  "train_output": "belief_sft_data_v3_train.jsonl",
+  "eval_output": "belief_sft_data_v3_eval.jsonl",
+  "train_label_counts": {
+    "yes": 4000,
+    "no": 4000,
+    "uncertain": 4000
+  },
+  "eval_label_counts": {
+    "no": 3683,
+    "uncertain": 1100,
+    "yes": 1218
+  },
+  "eval_shanten_counts": {
+    "8": 128,
+    "3": 1281,
+    "6": 499,
+    "5": 746,
+    "4": 1151,
+    "1": 527,
+    "2": 1250,
+    "7": 262,
+    "0": 123,
+    "-1": 16,
+    "9": 17,
+    "10": 1
+  },
+  "label_source": "opponent_posterior",
+  "danger_threshold": 1,
+  "positive_class": "shanten<=1 (danger/near-tenpai)",
+  "split_policy": "split-before-balance; train oversampled, eval left natural (leakage-safe)",
+  "format": "chat messages; assistant content is strict JSON for B_phi"
+}
