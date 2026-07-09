@@ -21,6 +21,7 @@ unsloth_compiled_cache/
 *.log
 *_run.log
 *.png
+*.pid
 
 # Large datasets
 *.jsonl
@@ -43,6 +44,11 @@ E0_results/
 Gate1_results*/
 H1_belief*/
 H1_seed_aggregate/
+July7_*/
+V4_E2_*/
+Defender_danger_data/
+Defender_danger_model/
+Defender_danger_model_smoke/
 eval_results/
 xai_visualizations/
 list/

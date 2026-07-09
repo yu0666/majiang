@@ -320,6 +320,8 @@ class MASKLLMAgent:
         threat_require_non_exploit: bool = True,
         threat_require_real_target: bool = False,
         threat_target_max_shanten: int = 0,
+        threat_target_signal: str = "oracle",
+        threat_target_prob_threshold: float = 0.5,
         log_counterfactual: bool = False,
         mc_seed: int = 0,
     ):
@@ -358,6 +360,13 @@ class MASKLLMAgent:
         # opponent hands).
         self.threat_require_real_target = threat_require_real_target
         self.threat_target_max_shanten = threat_target_max_shanten
+        # "oracle" = the ground-truth hand-peek gate above (upper bound only).
+        # "mc" = deployable substitute: opponent_view_posterior() estimates each
+        # opponent's tenpai-ish probability from public info only (melds +
+        # discards), same MC machinery _mc_beliefs() already uses in the
+        # opposite direction (observer j's belief about me).
+        self.threat_target_signal = threat_target_signal
+        self.threat_target_prob_threshold = threat_target_prob_threshold
         self.log_counterfactual = log_counterfactual
         self._mc_cache: Dict[int, Dict[str, Any]] = {}
         self.rng = random.Random(mc_seed)
@@ -487,6 +496,8 @@ class MASKLLMAgent:
             "threat_require_non_exploit": self.threat_require_non_exploit,
             "threat_require_real_target": self.threat_require_real_target,
             "threat_target_max_shanten": self.threat_target_max_shanten,
+            "threat_target_signal": self.threat_target_signal,
+            "threat_target_prob_threshold": self.threat_target_prob_threshold,
             "deceive_signal": self._last_deceive_signal,
             "z_state": z_state,
             "beliefs": beliefs,
@@ -592,17 +603,33 @@ class MASKLLMAgent:
         current_shanten = ShantenCalculator.calculate_shanten(player.hand_tiles, player.missing_suit)
         ffr_mode = current_shanten > self.mc_danger_threshold and self.forced_deceive != "always"
         if self.threat_require_real_target:
-            has_real_target = any(
-                within_shanten(p.hand_tiles, p.missing_suit, self.threat_target_max_shanten)
-                for p in game.players if p.player_id != self.player_id
-            )
+            target_probs: Optional[Dict[int, float]] = None
+            if self.threat_target_signal == "mc":
+                target_probs = {
+                    p.player_id: opponent_view_posterior(
+                        game, target_pid=p.player_id, observer_pid=self.player_id,
+                        num_samples=self.mc_oracle_samples, rng=self.rng, beta=self.mc_beta,
+                        max_shanten=self.threat_target_max_shanten,
+                    )["tenpai_prob"]
+                    for p in game.players if p.player_id != self.player_id
+                }
+                has_real_target = any(prob >= self.threat_target_prob_threshold for prob in target_probs.values())
+            else:
+                has_real_target = any(
+                    within_shanten(p.hand_tiles, p.missing_suit, self.threat_target_max_shanten)
+                    for p in game.players if p.player_id != self.player_id
+                )
             if not has_real_target:
                 self._last_deceive_signal = {
                     "signal_model": "discard_tell_gate",
                     "gate_mode": self.threat_gate_mode,
                     "blocked": True,
                     "blocked_reason": "no_real_target",
+                    "threat_target_signal": self.threat_target_signal,
                     "threat_target_max_shanten": self.threat_target_max_shanten,
+                    **({"threat_target_prob_threshold": self.threat_target_prob_threshold,
+                        "threat_target_probs": {f"P{k}": round(v, 3) for k, v in target_probs.items()}}
+                       if target_probs is not None else {}),
                 }
                 return ""
         tell_before = self._discard_tell_threat(game)

@@ -78,6 +78,7 @@ def init_game(
                 threat_model=cfg.get("threat_model", "mc"),
                 tell_weight=cfg.get("tell_weight", 1.0),
                 tell_window=cfg.get("tell_window", 6),
+                learned_model_path=cfg.get("learned_model_path"),
             )
         opponent_funcs = {pid: (defenders[pid].turn, None) for pid in (1, 2, 3)}
     elif opponent_style == "mixed":
@@ -202,7 +203,8 @@ class ResponsiveDefender:
 
     def __init__(self, observer_pid: int, threat_threshold: float, oracle_samples: int,
                  beta: float, danger_threshold: int, ffr_hand_shanten: int, rng: random.Random,
-                 threat_model: str = "mc", tell_weight: float = 1.0, tell_window: int = 6):
+                 threat_model: str = "mc", tell_weight: float = 1.0, tell_window: int = 6,
+                 learned_model_path: Optional[str] = None):
         self.pid = observer_pid
         self.threshold = threat_threshold
         self.oracle_samples = oracle_samples
@@ -210,9 +212,11 @@ class ResponsiveDefender:
         self.danger_threshold = danger_threshold
         self.ffr_hand_shanten = ffr_hand_shanten
         self.rng = rng
-        self.threat_model = threat_model      # "mc" | "discard_tell" | "blend"
+        self.threat_model = threat_model      # "mc" | "discard_tell" | "blend" | "learned"
         self.tell_weight = tell_weight        # blend: tell_weight*tell + (1-tell_weight)*mc
         self.tell_window = tell_window
+        self.learned_model_path = learned_model_path
+        self._learned_model = None            # lazy-loaded on first "learned" inference
         self._cache: Dict[int, float] = {}
         self.ff_opportunities = 0   # had a real hand AND P0 not actually dangerous
         self.ff_false = 0           # ... and folded anyway (induced false fold)
@@ -228,6 +232,37 @@ class ResponsiveDefender:
         )
         return float(post["tenpai_prob"])
 
+    def _learned_threat(self, game: MahjongGame) -> float:
+        """Learned danger channel: same public inputs discard_tell_threat() reads
+        (P0's own discard window, meld count, others' safe-discard set), scored by
+        the trained defender_danger_model checkpoint instead of a fixed formula."""
+        import numpy as np
+
+        from defender_danger_model import WINDOW_SIZE, load_model, predict_proba
+        from opponent_classifier import extract_action_features
+
+        if self._learned_model is None:
+            self._learned_model = load_model(self.learned_model_path, device="cpu")
+
+        p0 = game.players[0]
+        others = {(t.suit, t.number) for p in game.players if p.player_id != 0 for t in p.discarded_tiles}
+        meld_count = len(p0.open_melds)
+        total = len(p0.discarded_tiles)
+        start_idx = max(0, total - WINDOW_SIZE)
+        recent = p0.discarded_tiles[start_idx:]
+        window = []
+        for offset, tile in enumerate(recent):
+            global_idx = start_idx + offset + 1  # true running discard count, matches training features
+            is_safe = (tile.suit, tile.number) in others
+            window.append(extract_action_features(tile, "discard", global_idx, meld_count, is_safe, meld_count))
+        if not window:
+            return 0.5
+        arr = np.stack(window).astype(np.float32)
+        if len(arr) < WINDOW_SIZE:
+            pad = np.zeros((WINDOW_SIZE - len(arr), arr.shape[1]), dtype=np.float32)
+            arr = np.vstack([pad, arr])
+        return predict_proba(self._learned_model, arr, device="cpu")
+
     def _combine(self, game: MahjongGame, num_samples: int, rng: random.Random) -> float:
         if self.threat_model == "discard_tell":
             return discard_tell_threat(game, 0, self.tell_window)
@@ -235,6 +270,8 @@ class ResponsiveDefender:
             tell = discard_tell_threat(game, 0, self.tell_window)
             mc = self._mc_threat(game, num_samples, rng)
             return self.tell_weight * tell + (1.0 - self.tell_weight) * mc
+        if self.threat_model == "learned":
+            return self._learned_threat(game)
         return self._mc_threat(game, num_samples, rng)  # "mc"
 
     def threat(self, game: MahjongGame) -> float:
@@ -678,6 +715,8 @@ def play_one_game(
             threat_require_non_exploit=mask_cfg.get("threat_require_non_exploit", True),
             threat_require_real_target=mask_cfg.get("threat_require_real_target", False),
             threat_target_max_shanten=mask_cfg.get("threat_target_max_shanten", 0),
+            threat_target_signal=mask_cfg.get("threat_target_signal", "oracle"),
+            threat_target_prob_threshold=mask_cfg.get("threat_target_prob_threshold", 0.5),
             log_counterfactual=mask_cfg.get("log_counterfactual", False),
         )
         if method == "llm_mask" else None
@@ -902,13 +941,16 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         adapter_path=args.adapter_path,
         max_new_tokens=args.max_new_tokens,
     )
-    belief_llm = build_llm_callable(
-        backend=args.backend,
-        repo_dir=repo_dir,
-        model_path=args.model_path,
-        adapter_path=args.belief_adapter_path if args.belief_adapter_path else args.adapter_path,
-        max_new_tokens=args.max_new_tokens,
-    )
+    if not args.belief_adapter_path or args.belief_adapter_path == args.adapter_path:
+        belief_llm = llm
+    else:
+        belief_llm = build_llm_callable(
+            backend=args.backend,
+            repo_dir=repo_dir,
+            model_path=args.model_path,
+            adapter_path=args.belief_adapter_path,
+            max_new_tokens=args.max_new_tokens,
+        )
 
     defender_cfg = {
         "threat_threshold": args.threat_fold_threshold,
@@ -919,6 +961,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "threat_model": args.defender_threat_model,
         "tell_weight": args.defender_tell_weight,
         "tell_window": args.defender_tell_window,
+        "learned_model_path": args.defender_learned_model_path,
     }
     mask_cfg = {
         "oracle_samples": args.mask_oracle_samples,
@@ -939,6 +982,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "threat_require_non_exploit": not args.mask_threat_allow_exploit_overlap,
         "threat_require_real_target": args.mask_threat_require_real_target,
         "threat_target_max_shanten": args.mask_threat_target_max_shanten,
+        "threat_target_signal": args.mask_threat_target_signal,
+        "threat_target_prob_threshold": args.mask_threat_target_prob_threshold,
         "log_counterfactual": args.mask_log_counterfactual,
         "snapshot_samples": args.snapshot_oracle_samples,
         "snapshot_crn_seeds": args.snapshot_crn_seeds,
@@ -952,6 +997,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
 
     for method in args.methods:
         for i in range(args.games):
+            if i == 0 or (i + 1) % 10 == 0 or i + 1 == args.games:
+                print(
+                    f"[Gate1] output={args.output_dir} method={method} "
+                    f"game={i + 1}/{args.games}",
+                    flush=True,
+                )
             seed = args.seed + i
             game_row, step_rows, belief_rows = play_one_game(
                 method=method,
@@ -1090,7 +1141,15 @@ def main() -> None:
                               "whether deceiving only genuinely-close opponents converts FFR into net "
                               "benefit, vs. the default which fires on MASK's own tell projection alone."))
     parser.add_argument("--mask-threat-target-max-shanten", type=int, default=0,
-                        help="Oracle threshold for --mask-threat-require-real-target (0 = opponent must be tenpai).")
+                        help="Shanten threshold for --mask-threat-require-real-target (0 = opponent must be tenpai).")
+    parser.add_argument("--mask-threat-target-signal", choices=["oracle", "mc"], default="oracle",
+                        help=("Which signal --mask-threat-require-real-target uses to judge a target: "
+                              "oracle (default) peeks at the opponent's true hand (upper-bound ablation, "
+                              "not deployable). mc estimates each opponent's tenpai-ish probability from "
+                              "public info only (open melds + discards) via belief_oracle.opponent_view_posterior "
+                              "-- the deployable substitute, thresholded by --mask-threat-target-prob-threshold."))
+    parser.add_argument("--mask-threat-target-prob-threshold", type=float, default=0.5,
+                        help="Probability threshold on the mc signal's tenpai_prob for counting an opponent as a real target.")
     parser.add_argument("--mask-threat-max-start-shanten", type=int, default=3,
                         help="Do not use FFR deceive-threat from hopeless hands above this starting shanten.")
     parser.add_argument("--mask-threat-allow-exploit-overlap", action="store_true",
@@ -1101,12 +1160,14 @@ def main() -> None:
                         help="MC samples for the CRN threat before/after snapshot (measurement only; higher = less noise).")
     parser.add_argument("--snapshot-crn-seeds", type=int, default=1,
                         help="Number of common-random-number seeds to average for the threat-delta snapshot.")
-    parser.add_argument("--defender-threat-model", choices=["mc", "discard_tell", "blend"], default="mc",
+    parser.add_argument("--defender-threat-model", choices=["mc", "discard_tell", "blend", "learned"], default="mc",
                         help="Opponent threat model. discard_tell is deceivable by P0's discard choice (middle=push/up, terminal/safe=fold/down).")
     parser.add_argument("--defender-tell-weight", type=float, default=1.0,
                         help="blend model: tell_weight*discard_tell + (1-tell_weight)*mc.")
     parser.add_argument("--defender-tell-window", type=int, default=6,
                         help="How many of P0's most recent discards the tell reads.")
+    parser.add_argument("--defender-learned-model-path", default="Defender_danger_model/danger_model.pth",
+                        help="Checkpoint for --defender-threat-model learned (see train_defender_danger_model.py).")
     parser.add_argument("--backend", default="heuristic_fallback", choices=["heuristic_fallback", "local_qwen"])
     parser.add_argument("--model-path", default=None)
     parser.add_argument("--adapter-path", default=None)
