@@ -47,13 +47,14 @@ from game import (
 )
 from llm_backends import build_llm_callable
 from mask_llm import LLMBeliefEstimator, MASKLLMAgent, PublicOpponentTracker, RiskGate, legalize_action
-from prompt_builder import build_state_prompt, get_legal_actions
+from policy_metrics import discard_progress_metrics
+from prompt_builder import build_base_decision_prompt, build_state_prompt, get_legal_actions
 from rule_engine import ShantenCalculator
 
 
 RESULTS_DIR = Path("Gate1_results")
 METHODS = ("llm_base", "llm_reactive_z", "llm_mask")
-OPPONENT_STYLES = tuple(sorted(STYLE_BOTS.keys())) + ("mixed", "responsive")
+OPPONENT_STYLES = tuple(sorted(STYLE_BOTS.keys())) + ("mixed", "responsive", "neural")
 LLMCallable = Callable[[str], str]
 
 
@@ -81,6 +82,25 @@ def init_game(
                 learned_model_path=cfg.get("learned_model_path"),
             )
         opponent_funcs = {pid: (defenders[pid].turn, None) for pid in (1, 2, 3)}
+    elif opponent_style == "neural":
+        from neural_opponent_policy import load_policy
+
+        cfg = defender_cfg or {}
+        model_path = cfg.get("neural_model_path")
+        if not model_path:
+            raise ValueError(
+                "--opponent-style neural requires --neural-opponent-model-path "
+                "pointing to a trained neural_opponent_policy.pth checkpoint."
+            )
+        for pid in (1, 2, 3):
+            defenders[pid] = load_policy(
+                model_path=model_path,
+                observer_pid=pid,
+                device=cfg.get("neural_device", "cpu"),
+                danger_threshold=cfg.get("danger_threshold", 1),
+                ffr_hand_shanten=cfg.get("ffr_hand_shanten", 1),
+            )
+        opponent_funcs = {pid: (defenders[pid].turn, None) for pid in (1, 2, 3)}
     elif opponent_style == "mixed":
         styles = ["aggressive", "conservative", "random"]
         opponent_funcs = {pid: STYLE_BOTS[styles[pid - 1]] for pid in (1, 2, 3)}
@@ -102,6 +122,24 @@ def true_tenpai_label(game: MahjongGame, player_id: int = 0) -> Tuple[bool, List
     ready, waits = player.is_ready_with_missing_suit()
     shanten = ShantenCalculator.calculate_shanten(player.hand_tiles, player.missing_suit)
     return bool(ready), [str(t) for t in waits], int(shanten)
+
+
+def action_result_shanten(game: MahjongGame, player_id: int, action: str) -> Optional[int]:
+    metrics = discard_progress_metrics(game, player_id, action)
+    return metrics["shanten"] if metrics else None
+
+
+def best_discard_result_shanten(
+    game: MahjongGame,
+    player_id: int,
+    valid_actions: List[str],
+) -> Optional[int]:
+    values = [
+        value
+        for action in valid_actions
+        if (value := action_result_shanten(game, player_id, action)) is not None
+    ]
+    return min(values) if values else None
 
 
 def choose_min_shanten_action(game: MahjongGame, player_id: int, valid_actions: Optional[List[str]] = None) -> str:
@@ -130,6 +168,51 @@ def choose_min_shanten_action(game: MahjongGame, player_id: int, valid_actions: 
                 best_action = action
             break
     return best_action
+
+
+def choose_public_safe_no_regret(
+    game: MahjongGame,
+    player_id: int,
+    valid_actions: List[str],
+    fallback_action: str,
+) -> str:
+    """Apply a public-risk shield without sacrificing immediate shanten."""
+    if fallback_action in {"h", "g"}:
+        return fallback_action
+    public_discards = {
+        (tile.suit, tile.number)
+        for table_player in game.players
+        for tile in table_player.discarded_tiles
+    }
+    metrics = {
+        action: value
+        for action in valid_actions
+        if (value := discard_progress_metrics(game, player_id, action)) is not None
+    }
+    if not metrics:
+        return fallback_action
+    best_shanten = min(value["shanten"] for value in metrics.values())
+    best_effective_copies = max(
+        value["effective_copies"]
+        for value in metrics.values()
+        if value["shanten"] == best_shanten
+    )
+    player = game.players[player_id]
+    candidates = []
+    for action in valid_actions:
+        value = metrics.get(action)
+        if (
+            value is None
+            or value["shanten"] != best_shanten
+            or value["effective_copies"] < best_effective_copies
+        ):
+            continue
+        tile = next((tile for tile in player.hand_tiles if str(tile) == action[2:]), None)
+        if tile is not None and (tile.suit, tile.number) in public_discards:
+            candidates.append(action)
+    if fallback_action in candidates:
+        return fallback_action
+    return candidates[0] if candidates else fallback_action
 
 
 def defensive_discard_action(game: MahjongGame, pid: int, valid_actions: List[str]) -> str:
@@ -376,17 +459,13 @@ def choose_llm_base_action(
             "reason": "L0 base min shanten fallback",
         }
 
-    prompt = build_state_prompt(
-        game,
-        player_id,
-        valid_actions=valid_actions,
-        objective="只根据当前手牌和公开牌桌选择一个合法动作，不使用对手信念塑形",
-    )
+    prompt = build_base_decision_prompt(game, player_id, valid_actions=valid_actions)
     raw = llm(prompt)
     return legalize_action(raw, valid_actions), {
         "mode": "exploit",
         "reason": "L0 local LLM base decision",
         "llm_raw": raw,
+        "prompt_schema": "shared_base_action_v1",
     }
 
 
@@ -406,27 +485,27 @@ def choose_reactive_z_action(
         return "h", {"z_state": z_state, "gate": gate, "mode": "exploit", "reason": "hu legal"}
 
     if llm is not None:
-        base_prompt = build_state_prompt(
-            game,
-            player_id,
-            valid_actions=valid_actions,
-            objective="结合公开对手漂移 z_j(t) 选择一个合法动作，但不要做主动信念塑形",
-        )
-        prompt = f"""
-{base_prompt}
-
-【公开对手漂移 z_j(t)】
-{json.dumps(z_state, ensure_ascii=False)}
-
-请只输出一个合法动作。
-""".strip()
+        prompt = build_base_decision_prompt(game, player_id, valid_actions=valid_actions)
         raw = llm(prompt)
-        return legalize_action(raw, valid_actions), {
+        baseline_action = legalize_action(raw, valid_actions)
+        action = baseline_action
+        mode = "exploit"
+        reason = "L1 local LLM shared base decision"
+        if gate["mode_hint"] == "safe":
+            action = choose_public_safe_no_regret(game, player_id, valid_actions, baseline_action)
+            if action != baseline_action:
+                mode = "safe"
+                reason = "L1 public z/risk no-regret safety shield"
+        return action, {
             "z_state": z_state,
             "gate": gate,
-            "mode": gate["mode_hint"] if gate["mode_hint"] != "deceive" else "exploit",
-            "reason": "L1 local LLM reactive-z decision",
+            "public_gate": gate,
+            "mode": mode,
+            "reason": reason,
             "llm_raw": raw,
+            "baseline_action": baseline_action,
+            "safe_override_applied": action != baseline_action,
+            "prompt_schema": "shared_base_action_v1",
         }
 
     if gate["mode_hint"] == "safe":
@@ -563,6 +642,13 @@ def make_step_trace(
 ) -> Dict[str, Any]:
     player = game.players[0]
     true_ready, true_waits, true_shanten = true_tenpai_label(game, 0)
+    chosen_result_shanten = action_result_shanten(game, 0, action)
+    best_result_shanten = best_discard_result_shanten(game, 0, legal_actions)
+    shanten_regret = (
+        chosen_result_shanten - best_result_shanten
+        if chosen_result_shanten is not None and best_result_shanten is not None
+        else None
+    )
     return {
         "game_id": game.game_id,
         "seed": seed,
@@ -577,6 +663,7 @@ def make_step_trace(
         "belief_json": decision_state.get("beliefs", {}),
         "risk_budget": decision_state.get("gate", {}).get("risk_budget"),
         "gate": decision_state.get("gate", {}),
+        "public_gate": decision_state.get("public_gate", {}),
         "score_delta": player.balance - 10000,
         "true_tenpai": true_ready,
         "true_waits": true_waits,
@@ -594,6 +681,18 @@ def make_step_trace(
         "deceive_signal": decision_state.get("deceive_signal", {}),
         "counterfactual_exploit_action": decision_state.get("counterfactual_exploit_action"),
         "disguise_equals_exploit": decision_state.get("disguise_equals_exploit"),
+        "rule_action": decision_state.get("rule_action"),
+        "baseline_action": decision_state.get("baseline_action"),
+        "safe_override_applied": decision_state.get("safe_override_applied", False),
+        "candidate_reranker": decision_state.get("candidate_reranker", {}),
+        "gate_policy": decision_state.get("gate_policy", "rule"),
+        "learned_gate": decision_state.get("learned_gate", {}),
+        "decision_llm_raw": decision_state.get("decision_llm_raw"),
+        "decision_llm_parsed": decision_state.get("decision_llm_parsed"),
+        "prompt_schema": decision_state.get("prompt_schema"),
+        "chosen_result_shanten": chosen_result_shanten,
+        "best_result_shanten": best_result_shanten,
+        "shanten_regret": shanten_regret,
     }
 
 
@@ -683,6 +782,8 @@ def play_one_game(
     backend: str,
     llm: Optional[LLMCallable],
     belief_llm: Optional[LLMCallable],
+    reranker_llm: Optional[LLMCallable] = None,
+    gate_llm: Optional[LLMCallable] = None,
     defender_cfg: Optional[Dict[str, Any]] = None,
     mask_cfg: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -696,6 +797,9 @@ def play_one_game(
             player_id=0,
             decision_llm=llm,
             belief_llm=belief_llm,
+            reranker_llm=reranker_llm,
+            gate_llm=gate_llm,
+            gate_policy=mask_cfg.get("gate_policy", "rule"),
             mc_seed=seed * 13 + 1,
             mc_oracle_samples=mask_cfg.get("oracle_samples", 30),
             mc_beta=mask_cfg.get("beta", 2.0),
@@ -706,10 +810,14 @@ def play_one_game(
             deceive_style=mask_cfg.get("deceive_style", "safe"),
             threat_allow_break_ready=mask_cfg.get("threat_allow_break_ready", False),
             threat_max_result_shanten=mask_cfg.get("threat_max_result_shanten", 0),
+            threat_max_shanten_regret=mask_cfg.get("threat_max_shanten_regret", 0),
+            threat_min_ukeire_ratio=mask_cfg.get("threat_min_ukeire_ratio", 1.0),
             threat_gate_threshold=mask_cfg.get("threat_gate_threshold", 0.4),
             threat_gate_margin=mask_cfg.get("threat_gate_margin", 0.12),
             threat_min_delta=mask_cfg.get("threat_min_delta", 0.03),
             threat_gate_mode=mask_cfg.get("threat_gate_mode", "cross"),
+            threat_response_model=mask_cfg.get("threat_response_model", "tell"),
+            threat_response_tell_weight=mask_cfg.get("threat_response_tell_weight", 1.0),
             threat_tell_window=mask_cfg.get("threat_tell_window", 6),
             threat_max_start_shanten=mask_cfg.get("threat_max_start_shanten", 3),
             threat_require_non_exploit=mask_cfg.get("threat_require_non_exploit", True),
@@ -718,6 +826,9 @@ def play_one_game(
             threat_target_signal=mask_cfg.get("threat_target_signal", "oracle"),
             threat_target_prob_threshold=mask_cfg.get("threat_target_prob_threshold", 0.5),
             log_counterfactual=mask_cfg.get("log_counterfactual", False),
+            use_candidate_reranker=mask_cfg.get("candidate_reranker", False),
+            use_candidate_scoring=mask_cfg.get("candidate_scoring", False),
+            reranker_max_candidates=mask_cfg.get("reranker_max_candidates", 6),
         )
         if method == "llm_mask" else None
     )
@@ -737,6 +848,15 @@ def play_one_game(
     response_false_fold_opportunities = 0
     response_false_folds = 0
     last_p0_state: Dict[str, Any] = {}
+    shanten_regrets: List[int] = []
+    safe_overrides = 0
+    reranker_enabled_states = 0
+    reranker_used_states = 0
+    reranker_changed_actions = 0
+    reranker_parsed_outputs = 0
+    learned_gate_used_states = 0
+    learned_gate_parsed_outputs = 0
+    learned_gate_mode_counts: Counter[str] = Counter()
 
     while not game.is_game_over and steps < max_steps:
         steps += 1
@@ -791,13 +911,33 @@ def play_one_game(
 
             mode = decision_state.get("mode", "exploit")
             mode_counts[mode] += 1
+            if decision_state.get("safe_override_applied"):
+                safe_overrides += 1
+            reranker_state = decision_state.get("candidate_reranker") or {}
+            if reranker_state.get("enabled"):
+                reranker_enabled_states += 1
+            if reranker_state.get("used"):
+                reranker_used_states += 1
+                if reranker_state.get("changed_action"):
+                    reranker_changed_actions += 1
+                if reranker_state.get("parsed"):
+                    reranker_parsed_outputs += 1
+            learned_gate_state = decision_state.get("learned_gate") or {}
+            if learned_gate_state.get("used"):
+                learned_gate_used_states += 1
+                learned_gate_mode_counts[str(learned_gate_state.get("selected_mode", "unknown"))] += 1
+                if learned_gate_state.get("parsed"):
+                    learned_gate_parsed_outputs += 1
             if mode == "deceive":
                 deceive_active_until = steps + 4
                 deceive_windows += 1
 
-            step_rows.append(
-                make_step_trace(game, method, seed, steps, pid, action, legal_actions, decision_ms, decision_state, backend)
+            step_trace = make_step_trace(
+                game, method, seed, steps, pid, action, legal_actions, decision_ms, decision_state, backend
             )
+            step_rows.append(step_trace)
+            if step_trace["shanten_regret"] is not None:
+                shanten_regrets.append(int(step_trace["shanten_regret"]))
         else:
             if pid in defenders:
                 action = defenders[pid].turn(
@@ -878,6 +1018,23 @@ def play_one_game(
     net = [end_balances[i] - start_balances[i] for i in range(4)]
     agent_player = game.players[0]
     agent_dealin = any(p.is_hu and not p.hu_is_self_drawn and p.hu_discard_player_id == 0 for p in game.players)
+    agent_final_ready, _ = agent_player.is_ready_with_missing_suit()
+    agent_final_shanten = (
+        None
+        if agent_player.is_hu
+        else int(ShantenCalculator.calculate_shanten(agent_player.hand_tiles, agent_player.missing_suit))
+    )
+    agent_hua_zhu = bool(
+        not agent_player.is_hu
+        and agent_player.missing_suit
+        and any(tile.suit == agent_player.missing_suit for tile in agent_player.hand_tiles)
+    )
+    if game.deck.remaining_count() == 0:
+        end_reason = "wall_exhausted"
+    elif sum(1 for player in game.players if player.is_hu) >= 3:
+        end_reason = "three_winners"
+    else:
+        end_reason = "max_steps_or_unsettled"
 
     # Meaningful FFR (turn phase, oracle-grounded): opponents folded a real hand
     # while P0 was not actually dangerous -> a fold induced by (false) perceived threat.
@@ -908,8 +1065,13 @@ def play_one_game(
         "opponent_style": opponent_style,
         "steps": steps,
         "agent_hu": bool(agent_player.is_hu),
+        "agent_hu_fan": int(agent_player.hu_fan if agent_player.is_hu else 0),
         "agent_net": net[0],
         "agent_dealin": bool(agent_dealin),
+        "agent_final_ready": bool(agent_final_ready),
+        "agent_final_shanten": agent_final_shanten,
+        "agent_hua_zhu": agent_hua_zhu,
+        "end_reason": end_reason,
         "winners": list(game.winners),
         "decision_ms": decision_times,
         "mode_counts": dict(mode_counts),
@@ -928,6 +1090,21 @@ def play_one_game(
         "response_false_fold_opportunities": response_false_fold_opportunities,
         "response_false_folds": response_false_folds,
         "history_len": len(game.history),
+        "reranker_enabled_states": reranker_enabled_states,
+        "reranker_used_states": reranker_used_states,
+        "reranker_changed_actions": reranker_changed_actions,
+        "reranker_parsed_outputs": reranker_parsed_outputs,
+        "learned_gate_used_states": learned_gate_used_states,
+        "learned_gate_parsed_outputs": learned_gate_parsed_outputs,
+        "learned_gate_mode_counts": dict(learned_gate_mode_counts),
+        "avg_shanten_regret": (
+            sum(shanten_regrets) / len(shanten_regrets) if shanten_regrets else 0.0
+        ),
+        "positive_shanten_regret_rate": (
+            sum(1 for value in shanten_regrets if value > 0) / len(shanten_regrets)
+            if shanten_regrets else 0.0
+        ),
+        "safe_overrides": safe_overrides,
     }
     return game_row, step_rows, belief_rows
 
@@ -940,6 +1117,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         model_path=args.model_path,
         adapter_path=args.adapter_path,
         max_new_tokens=args.max_new_tokens,
+        temperature=getattr(args, "temperature", 0.0),
     )
     if not args.belief_adapter_path or args.belief_adapter_path == args.adapter_path:
         belief_llm = llm
@@ -950,7 +1128,45 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             model_path=args.model_path,
             adapter_path=args.belief_adapter_path,
             max_new_tokens=args.max_new_tokens,
+            temperature=getattr(args, "temperature", 0.0),
         )
+
+    reranker_model_path = getattr(args, "reranker_model_path", None)
+    reranker_adapter_path = getattr(args, "reranker_adapter_path", None)
+    if getattr(args, "mask_candidate_reranker", False) and (
+        reranker_model_path or reranker_adapter_path
+    ):
+        reranker_llm = build_llm_callable(
+            backend=args.backend,
+            repo_dir=repo_dir,
+            model_path=reranker_model_path or args.model_path,
+            adapter_path=reranker_adapter_path,
+            max_new_tokens=getattr(args, "reranker_max_new_tokens", args.max_new_tokens),
+            temperature=0.0,
+        )
+    else:
+        reranker_llm = llm
+
+    gate_policy = getattr(args, "mask_gate_policy", "rule")
+    gate_model_path = getattr(args, "gate_model_path", None)
+    gate_adapter_path = getattr(args, "gate_adapter_path", None)
+    if gate_policy == "learned":
+        if not (gate_model_path or gate_adapter_path):
+            raise ValueError("learned gate requires --gate-model-path or --gate-adapter-path")
+        gate_llm = build_llm_callable(
+            backend=args.backend,
+            repo_dir=repo_dir,
+            model_path=gate_model_path or args.model_path,
+            adapter_path=gate_adapter_path,
+            max_new_tokens=getattr(args, "gate_max_new_tokens", 8),
+            temperature=0.0,
+            system_prompt=(
+                "你是四川麻将 MASK 风险门控器。只能从给出的 "
+                "exploit、safe、deceive 模式中选择一个。"
+            ),
+        )
+    else:
+        gate_llm = None
 
     defender_cfg = {
         "threat_threshold": args.threat_fold_threshold,
@@ -962,6 +1178,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "tell_weight": args.defender_tell_weight,
         "tell_window": args.defender_tell_window,
         "learned_model_path": args.defender_learned_model_path,
+        "neural_model_path": args.neural_opponent_model_path,
+        "neural_device": args.neural_opponent_device,
     }
     mask_cfg = {
         "oracle_samples": args.mask_oracle_samples,
@@ -973,10 +1191,14 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "deceive_style": args.mask_deceive_style,
         "threat_allow_break_ready": args.mask_threat_allow_break_ready,
         "threat_max_result_shanten": args.mask_threat_max_result_shanten,
+        "threat_max_shanten_regret": getattr(args, "mask_threat_max_shanten_regret", 0),
+        "threat_min_ukeire_ratio": getattr(args, "mask_threat_min_ukeire_ratio", 1.0),
         "threat_gate_threshold": args.mask_threat_gate_threshold,
         "threat_gate_margin": args.mask_threat_gate_margin,
         "threat_min_delta": args.mask_threat_min_delta,
         "threat_gate_mode": args.mask_threat_gate_mode,
+        "threat_response_model": getattr(args, "mask_threat_response_model", "tell"),
+        "threat_response_tell_weight": getattr(args, "mask_threat_response_tell_weight", 1.0),
         "threat_tell_window": args.mask_threat_tell_window,
         "threat_max_start_shanten": args.mask_threat_max_start_shanten,
         "threat_require_non_exploit": not args.mask_threat_allow_exploit_overlap,
@@ -985,6 +1207,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "threat_target_signal": args.mask_threat_target_signal,
         "threat_target_prob_threshold": args.mask_threat_target_prob_threshold,
         "log_counterfactual": args.mask_log_counterfactual,
+        "candidate_reranker": getattr(args, "mask_candidate_reranker", False),
+        "candidate_scoring": getattr(args, "mask_candidate_scoring", False),
+        "reranker_max_candidates": getattr(args, "mask_reranker_max_candidates", 6),
+        "gate_policy": gate_policy,
         "snapshot_samples": args.snapshot_oracle_samples,
         "snapshot_crn_seeds": args.snapshot_crn_seeds,
     }
@@ -1013,6 +1239,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 backend=args.backend,
                 llm=llm,
                 belief_llm=belief_llm,
+                reranker_llm=reranker_llm,
+                gate_llm=gate_llm,
                 defender_cfg=defender_cfg,
                 mask_cfg=mask_cfg,
             )
@@ -1040,12 +1268,41 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                  "disguise is a no-op at the action level. Requires --mask-log-counterfactual."),
     }
 
+    if args.opponent_style == "neural":
+        ffr_definition = (
+            "FFR_proxy = neural turn-phase false folds / opportunities. "
+            "Opportunity = neural opponent hand shanten<=ffr_hand_shanten and P0 shanten>danger_threshold; "
+            "false fold = neural action differs from min-shanten push and is more conservative or loses progress. "
+            "This is a behavior proxy because the neural opponent has no explicit threat threshold."
+        )
+        ffr_limitation = (
+            "Against --opponent-style neural, FFR is a proxy behavioral metric, "
+            "not the original responsive-defender threat-threshold FFR."
+        )
+    else:
+        ffr_definition = (
+            "FFR = turn-phase false folds / opportunities. Opportunity = a responsive opponent "
+            "had a real hand (shanten<=ffr_hand_shanten) AND P0 was not actually dangerous "
+            "(oracle); false fold = it nonetheless played safe because its public threat estimate "
+            "of P0 was high. Only meaningful with --opponent-style responsive."
+        )
+        ffr_limitation = (
+            "FFR/DIR are only nonzero against belief-responsive opponents (--opponent-style responsive); "
+            "the default rule bots (greedy/aggressive/...) do not fold on perceived threat."
+        )
+
     summary = {
         "created_for": "Gate1 minimal H1/H2 pipeline",
         "backend": args.backend,
         "model_path": args.model_path,
         "adapter_path": args.adapter_path,
+        "temperature": getattr(args, "temperature", 0.0),
         "belief_adapter_path": args.belief_adapter_path,
+        "reranker_model_path": reranker_model_path,
+        "reranker_adapter_path": reranker_adapter_path,
+        "gate_policy": gate_policy,
+        "gate_model_path": gate_model_path,
+        "gate_adapter_path": gate_adapter_path,
         "opponent_style": args.opponent_style,
         "methods": list(args.methods),
         "games_per_method": args.games,
@@ -1057,17 +1314,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "FFR_attribution": summarize_false_fold_attribution(all_ffr_events),
         "deceive_counterfactual": deceive_counterfactual,
         "Gate1_pairwise": paired_method_comparison(all_games, "llm_reactive_z", "llm_mask"),
-        "ffr_definition": (
-            "FFR = turn-phase false folds / opportunities. Opportunity = a responsive opponent "
-            "had a real hand (shanten<=ffr_hand_shanten) AND P0 was not actually dangerous "
-            "(oracle); false fold = it nonetheless played safe because its public threat estimate "
-            "of P0 was high. Only meaningful with --opponent-style responsive."
-        ),
+        "ffr_definition": ffr_definition,
         "limitations": [
             "If backend=heuristic_fallback, numbers are pipeline checks rather than trained LLM conclusions.",
             "E1 label is coarse true P0 tenpai; final paper needs opponent-view posterior oracle.",
-            "FFR/DIR are only nonzero against belief-responsive opponents (--opponent-style responsive); "
-            "the default rule bots (greedy/aggressive/...) do not fold on perceived threat.",
+            ffr_limitation,
         ],
     }
 
@@ -1100,6 +1351,10 @@ def main() -> None:
                         help="P0 'dangerous' = shanten<=this (also the threat-posterior target).")
     parser.add_argument("--ffr-hand-shanten", type=int, default=1,
                         help="Opponent has a 'real hand' worth pushing when its shanten<=this.")
+    parser.add_argument("--neural-opponent-model-path", default="Neural_opponent_model/neural_opponent_policy.pth",
+                        help="Checkpoint used when --opponent-style neural.")
+    parser.add_argument("--neural-opponent-device", default="cpu",
+                        help="Inference device for --opponent-style neural.")
     # MASK-side MC-B_phi and deceive controls.
     parser.add_argument("--mask-oracle-samples", type=int, default=30,
                         help="MC samples for MASK's own B_phi estimate.")
@@ -1121,6 +1376,11 @@ def main() -> None:
                         help=("For deceive-threat from a dangerous hand, allow resulting hand up to this shanten. "
                               "When threat/FFR starts from a non-dangerous hand, the action instead preserves "
                               "non-dangerous status so FFR opportunities remain countable."))
+    parser.add_argument("--mask-threat-max-shanten-regret", type=int, default=0,
+                        help=("Maximum shanten loss of a threat/deceive discard relative to the "
+                              "best legal discard. Zero permits only no-immediate-tile-efficiency-cost deception."))
+    parser.add_argument("--mask-threat-min-ukeire-ratio", type=float, default=1.0,
+                        help="Minimum effective-tile-copy ratio versus the best same-shanten discard.")
     parser.add_argument("--mask-threat-gate-threshold", type=float, default=0.4,
                         help="Deceive-threat only fires when its projected discard-tell threat crosses this fold threshold.")
     parser.add_argument("--mask-threat-gate-margin", type=float, default=0.12,
@@ -1132,6 +1392,10 @@ def main() -> None:
                               "threshold AND this single discard crosses it (narrow, can collapse trigger "
                               "rate). delta_only: fire on any meaningfully-pushing discard regardless of "
                               "distance to the threshold, letting pressure build across turns."))
+    parser.add_argument("--mask-threat-response-model", choices=["tell", "blend"], default="tell",
+                        help="Public response model used to decide whether a threat discard changes opponent behavior.")
+    parser.add_argument("--mask-threat-response-tell-weight", type=float, default=1.0,
+                        help="Tell weight for --mask-threat-response-model blend; must match the evaluated defender.")
     parser.add_argument("--mask-threat-tell-window", type=int, default=6,
                         help="Recent P0 discard window used by MASK's public tell gate.")
     parser.add_argument("--mask-threat-require-real-target", action="store_true",
@@ -1156,6 +1420,15 @@ def main() -> None:
                         help="Allow deceive-threat even if the chosen disguise equals the exploit action. Default requires a real action change.")
     parser.add_argument("--mask-log-counterfactual", action="store_true",
                         help="On deceive decisions, also compute the exploit action and log whether disguise==exploit (measures no-op).")
+    parser.add_argument("--mask-candidate-reranker", action="store_true",
+                        help="Let the decision LLM rank rule-constrained candidates inside the rule-selected MASK mode.")
+    parser.add_argument("--mask-candidate-scoring", action="store_true",
+                        help="Rank candidates by conditional log probability instead of free generation.")
+    parser.add_argument("--mask-reranker-max-candidates", type=int, default=6)
+    parser.add_argument("--mask-gate-policy", choices=["rule", "learned", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5"], default="rule")
+    parser.add_argument("--gate-model-path", default=None)
+    parser.add_argument("--gate-adapter-path", default=None)
+    parser.add_argument("--gate-max-new-tokens", type=int, default=8)
     parser.add_argument("--snapshot-oracle-samples", type=int, default=120,
                         help="MC samples for the CRN threat before/after snapshot (measurement only; higher = less noise).")
     parser.add_argument("--snapshot-crn-seeds", type=int, default=1,
@@ -1172,7 +1445,13 @@ def main() -> None:
     parser.add_argument("--model-path", default=None)
     parser.add_argument("--adapter-path", default=None)
     parser.add_argument("--belief-adapter-path", default=None)
+    parser.add_argument("--reranker-model-path", default=None,
+                        help="Optional dedicated reranker base/merged model; the policy model remains unchanged.")
+    parser.add_argument("--reranker-adapter-path", default=None,
+                        help="Optional dedicated reranker LoRA adapter loaded on --reranker-model-path.")
+    parser.add_argument("--reranker-max-new-tokens", type=int, default=16)
     parser.add_argument("--max-new-tokens", type=int, default=128)
+    parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--output-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args()
 

@@ -183,6 +183,12 @@ def summarize_games(games: List[Dict[str, Any]]) -> Dict[str, Any]:
         return {"games": 0}
 
     n = len(games)
+    nets = [float(g["agent_net"]) for g in games]
+    sorted_nets = sorted(nets)
+    trim = int(0.10 * n)
+    trimmed_nets = sorted_nets[trim:n - trim] if trim and n > 2 * trim else sorted_nets
+    net_mean = sum(nets) / n
+    net_std = (sum((value - net_mean) ** 2 for value in nets) / n) ** 0.5
     times = [t for g in games for t in g.get("decision_ms", [])]
     mode_counts = Counter()
     for g in games:
@@ -192,13 +198,83 @@ def summarize_games(games: List[Dict[str, Any]]) -> Dict[str, Any]:
     induced_dealins = sum(int(g.get("induced_dealin", 0)) for g in games)
     false_fold_opps = sum(int(g.get("false_fold_opportunities", 0)) for g in games)
     false_folds = sum(int(g.get("false_folds", 0)) for g in games)
+    reranker_enabled = sum(int(g.get("reranker_enabled_states", 0)) for g in games)
+    reranker_used = sum(int(g.get("reranker_used_states", 0)) for g in games)
+    reranker_changed = sum(int(g.get("reranker_changed_actions", 0)) for g in games)
+    reranker_parsed = sum(int(g.get("reranker_parsed_outputs", 0)) for g in games)
+    safe_overrides = sum(int(g.get("safe_overrides", 0)) for g in games)
+    learned_gate_used = sum(int(g.get("learned_gate_used_states", 0)) for g in games)
+    learned_gate_parsed = sum(int(g.get("learned_gate_parsed_outputs", 0)) for g in games)
+    learned_gate_modes = Counter()
+    for game in games:
+        learned_gate_modes.update(game.get("learned_gate_mode_counts", {}))
+    non_hu = [g for g in games if not g.get("agent_hu")]
+    final_shantens = [
+        int(g["agent_final_shanten"])
+        for g in non_hu
+        if g.get("agent_final_shanten") is not None
+    ]
+    hu_games = [g for g in games if g.get("agent_hu")]
+    dealin_games = [g for g in games if g.get("agent_dealin")]
+    neither_games = [
+        g for g in games if not g.get("agent_hu") and not g.get("agent_dealin")
+    ]
+
+    def conditional_net(rows: List[Dict[str, Any]]) -> Optional[float]:
+        return sum(float(g["agent_net"]) for g in rows) / len(rows) if rows else None
 
     return {
         "games": n,
-        "avg_net": sum(float(g["agent_net"]) for g in games) / n,
+        "avg_net": net_mean,
+        "net_distribution": {
+            "median": percentile(nets, 0.50),
+            "std": net_std,
+            "trimmed_mean_10pct": sum(trimmed_nets) / len(trimmed_nets),
+            "p10": percentile(nets, 0.10),
+            "p90": percentile(nets, 0.90),
+            "min": sorted_nets[0],
+            "max": sorted_nets[-1],
+        },
         "hu_rate": sum(1 for g in games if g.get("agent_hu")) / n,
+        "avg_hu_fan": (
+            sum(float(g.get("agent_hu_fan", 0)) for g in hu_games) / len(hu_games)
+            if hu_games else 0.0
+        ),
+        "fan_per_game": sum(float(g.get("agent_hu_fan", 0)) for g in games) / n,
         "dealin_rate": sum(1 for g in games if g.get("agent_dealin")) / n,
         "avg_steps": sum(float(g["steps"]) for g in games) / n,
+        "end_state": {
+            "wall_exhaustion_rate": sum(g.get("end_reason") == "wall_exhausted" for g in games) / n,
+            "final_ready_rate_non_hu": (
+                sum(bool(g.get("agent_final_ready")) for g in non_hu) / len(non_hu)
+                if non_hu else 0.0
+            ),
+            "hua_zhu_rate_non_hu": (
+                sum(bool(g.get("agent_hua_zhu")) for g in non_hu) / len(non_hu)
+                if non_hu else 0.0
+            ),
+            "avg_final_shanten_non_hu": (
+                sum(final_shantens) / len(final_shantens) if final_shantens else None
+            ),
+        },
+        "conditional_net": {
+            "hu": conditional_net(hu_games),
+            "dealin": conditional_net(dealin_games),
+            "neither_hu_nor_dealin": conditional_net(neither_games),
+        },
+        "action_efficiency": {
+            "avg_shanten_regret": sum(float(g.get("avg_shanten_regret", 0.0)) for g in games) / n,
+            "positive_shanten_regret_rate": (
+                sum(float(g.get("positive_shanten_regret_rate", 0.0)) for g in games) / n
+            ),
+            "safe_overrides": safe_overrides,
+        },
+        "learned_gate": {
+            "used_states": learned_gate_used,
+            "parsed_outputs": learned_gate_parsed,
+            "parse_rate": learned_gate_parsed / learned_gate_used if learned_gate_used else 0.0,
+            "mode_counts": dict(learned_gate_modes),
+        },
         "DIR": induced_dealins / deceive_windows if deceive_windows else 0.0,
         "DIR_counts": {
             "induced_dealin": induced_dealins,
@@ -216,6 +292,15 @@ def summarize_games(games: List[Dict[str, Any]]) -> Dict[str, Any]:
             "p99": percentile(times, 0.99),
         },
         "mode_counts": dict(mode_counts),
+        "candidate_reranker": {
+            "enabled_states": reranker_enabled,
+            "used_states": reranker_used,
+            "changed_actions": reranker_changed,
+            "parsed_outputs": reranker_parsed,
+            "use_rate": reranker_used / reranker_enabled if reranker_enabled else 0.0,
+            "change_rate_when_used": reranker_changed / reranker_used if reranker_used else 0.0,
+            "parse_rate_when_used": reranker_parsed / reranker_used if reranker_used else 0.0,
+        },
     }
 
 

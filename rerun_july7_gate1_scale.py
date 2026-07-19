@@ -100,6 +100,8 @@ def base_args(methods: List[str], seed: int, output_dir: Path) -> SimpleNamespac
         defender_tell_weight=0.3,
         defender_tell_window=6,
         defender_learned_model_path="Defender_danger_model/danger_model.pth",
+        neural_opponent_model_path="Neural_opponent_model/neural_opponent_policy.pth",
+        neural_opponent_device="cpu",
         backend="heuristic_fallback",
         model_path=None,
         adapter_path=None,
@@ -142,12 +144,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=Path("July7_gate1_scale_rerun"))
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     per_seed: List[Dict[str, Any]] = []
 
-    for seed in SEEDS:
+    for seed in args.seeds:
         row: Dict[str, Any] = {"seed": seed}
         for kind in ("baseline", "oracle", "mc"):
             out_dir = args.output_dir / f"{kind}_seed{seed}"

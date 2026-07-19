@@ -3,6 +3,7 @@
 """
 from typing import List, Tuple, Optional, Dict, Set
 from collections import Counter
+from functools import lru_cache
 from tiles import Tile, Suit
 
 # ==================== 向听数计算器 (修复版) ====================
@@ -43,14 +44,19 @@ class ShantenCalculator:
         if not valid_tiles:
             return 8 + missing_count
         
+        # Concealed hand sizes are 14/13 with no open meld, 11/10 with one,
+        # 8/7 with two, etc.  The old implementation ignored this and therefore
+        # reported many exact ready hands as 2/4/6 shanten.
+        open_melds = max(0, (14 - len(tiles)) // 3)
+
         # 2. 计算有效牌的基础向听数
-        base_shanten = ShantenCalculator._calculate_base_shanten(valid_tiles)
+        base_shanten = ShantenCalculator._calculate_base_shanten(valid_tiles, open_melds)
         
         # 3. 加上定缺牌惩罚 (每张定缺牌+1向听)
         return base_shanten + missing_count
     
     @staticmethod
-    def _calculate_base_shanten(tiles: List[Tile]) -> int:
+    def _calculate_base_shanten(tiles: List[Tile], open_melds: int = 0) -> int:
         """计算基础向听数（不考虑定缺）"""
         n = len(tiles)
         
@@ -60,13 +66,13 @@ class ShantenCalculator:
                 return -1
         
         # 检查七对向听
-        if n >= 13:
+        if n >= 13 and open_melds == 0:
             seven_pairs_shanten = ShantenCalculator._seven_pairs_shanten(tiles)
         else:
             seven_pairs_shanten = 8
         
         # 计算标准向听 (面子+将)
-        standard_shanten = ShantenCalculator._standard_shanten(tiles)
+        standard_shanten = ShantenCalculator._standard_shanten(tiles, open_melds)
         
         return min(seven_pairs_shanten, standard_shanten)
     
@@ -102,78 +108,69 @@ class ShantenCalculator:
         return min(8, shanten)
     
     @staticmethod  
-    def _standard_shanten(tiles: List[Tile]) -> int:
-        """计算标准胡牌向听数 (4面子+1将)"""
-        # 按花色分组
-        suits = {Suit.WAN: [], Suit.TIAO: [], Suit.TONG: []}
-        for t in tiles:
-            suits[t.suit].append(t.number)
-        
-        for s in suits:
-            suits[s].sort()
-        
-        # 需要的面子数 (根据牌数)
-        n = len(tiles)
-        need_melds = (n - 2) // 3  # 去掉将牌后需要的面子数
-        
-        # 搜索最优解
-        best_shanten = 8
-        
-        # 遍历所有可能的将牌
-        counter = Counter((t.suit, t.number) for t in tiles)
-        tried_pairs = set()
-        
-        for tile_key, count in counter.items():
-            if count >= 2 and tile_key not in tried_pairs:
-                tried_pairs.add(tile_key)
-                # 选这个对子做将
-                temp_suits = {s: list(suits[s]) for s in suits}
-                suit, num = tile_key
-                temp_suits[suit].remove(num)
-                temp_suits[suit].remove(num)
-                
-                # 计算剩余牌的面子和搭子
-                total_melds = 0
-                total_partials = 0
-                
-                for s in Suit:
-                    if s in temp_suits:
-                        melds, partials = ShantenCalculator._count_melds_partials(temp_suits[s])
-                        total_melds += melds
-                        total_partials += partials
-                
-                # 搭子不能超过 (需要面子数 - 已有面子数)
-                useful_partials = min(total_partials, need_melds - total_melds)
-                
-                # 向听数 = 需要面子数 - 2*已有面子 - 搭子 - 1(有将)
-                shanten = (need_melds - total_melds) * 2 - total_melds - useful_partials - 1
-                # 简化公式: shanten = need_melds - 2*melds - partials - 1
-                shanten = need_melds - 2 * total_melds - useful_partials - 1
-                
-                # 修正计算
-                shanten = 8 - 2 * total_melds - useful_partials - 1
-                shanten = max(-1, min(8, shanten))
-                
-                if shanten < best_shanten:
-                    best_shanten = shanten
-        
-        # 也考虑没有将的情况（单钓）
-        total_melds = 0
-        total_partials = 0
-        for s in Suit:
-            if s in suits:
-                melds, partials = ShantenCalculator._count_melds_partials(suits[s])
-                total_melds += melds
-                total_partials += partials
-        
-        useful_partials = min(total_partials, 4 - total_melds)
-        shanten = 8 - 2 * total_melds - useful_partials
-        shanten = max(-1, min(8, shanten))
-        
-        if shanten < best_shanten:
-            best_shanten = shanten
-        
-        return best_shanten
+    def _standard_shanten(tiles: List[Tile], open_melds: int = 0) -> int:
+        """Exact standard-hand shanten via meld/taatsu/pair decomposition."""
+        suit_order = {Suit.WAN: 0, Suit.TIAO: 1, Suit.TONG: 2}
+        counts = [0] * 27
+        for tile in tiles:
+            counts[suit_order[tile.suit] * 9 + tile.number - 1] += 1
+
+        @lru_cache(maxsize=None)
+        def search(state: Tuple[int, ...], melds: int, taatsu: int, pair: int) -> int:
+            total_melds = open_melds + melds
+            useful_taatsu = min(taatsu, max(0, 4 - total_melds))
+            best = 8 - 2 * total_melds - useful_taatsu - pair
+
+            try:
+                index = next(i for i, count in enumerate(state) if count)
+            except StopIteration:
+                return max(-1, best)
+
+            values = list(state)
+
+            # Treat one copy as an isolated tile.
+            values[index] -= 1
+            best = min(best, search(tuple(values), melds, taatsu, pair))
+            values[index] += 1
+
+            if state[index] >= 3 and total_melds < 4:
+                values[index] -= 3
+                best = min(best, search(tuple(values), melds + 1, taatsu, pair))
+                values[index] += 3
+
+            position = index % 9
+            if position <= 6 and state[index + 1] and state[index + 2] and total_melds < 4:
+                values[index] -= 1
+                values[index + 1] -= 1
+                values[index + 2] -= 1
+                best = min(best, search(tuple(values), melds + 1, taatsu, pair))
+                values[index] += 1
+                values[index + 1] += 1
+                values[index + 2] += 1
+
+            if state[index] >= 2:
+                values[index] -= 2
+                if pair == 0:
+                    best = min(best, search(tuple(values), melds, taatsu, 1))
+                if taatsu < 4:
+                    best = min(best, search(tuple(values), melds, taatsu + 1, pair))
+                values[index] += 2
+
+            if taatsu < 4 and position <= 7 and state[index + 1]:
+                values[index] -= 1
+                values[index + 1] -= 1
+                best = min(best, search(tuple(values), melds, taatsu + 1, pair))
+                values[index] += 1
+                values[index + 1] += 1
+
+            if taatsu < 4 and position <= 6 and state[index + 2]:
+                values[index] -= 1
+                values[index + 2] -= 1
+                best = min(best, search(tuple(values), melds, taatsu + 1, pair))
+
+            return max(-1, best)
+
+        return search(tuple(counts), 0, 0, 0)
     
     @staticmethod
     def _count_melds_partials(cards: List[int]) -> Tuple[int, int]:
@@ -254,6 +251,9 @@ class HandPattern:
 
     def is_winning_hand(self) -> bool:
         if self.tile_count % 3 != 2:
+            return False
+        counter = Counter((tile.suit, tile.number) for tile in self.tiles)
+        if any(count > 4 for count in counter.values()):
             return False
         if self.tile_count == 14 and self._is_seven_pairs():
             return True

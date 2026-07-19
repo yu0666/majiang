@@ -45,7 +45,15 @@ Gate1_results*/
 H1_belief*/
 H1_seed_aggregate/
 July7_*/
+V1_E2_*/
 V4_E2_*/
+V4_L2_*/
+Qwen25_*/
+MASK_SFT_*/
+V1_mixed_sft_data/
+V2_E2_*/
+qwen-v1-*/
+qwen-v2-*/
 Defender_danger_data/
 Defender_danger_model/
 Defender_danger_model_smoke/

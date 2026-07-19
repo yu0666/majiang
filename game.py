@@ -2,6 +2,7 @@
 四川麻将游戏主逻辑：封装游戏全流程 (含人机模块 & 循环对局 & 查叫查花猪)
 """
 from typing import List, Dict, Optional, Tuple, Set
+from collections import Counter
 from enum import Enum
 import random
 import time
@@ -98,6 +99,14 @@ class PlayerState:
         if new_tile:
             test_tiles.append(new_tile)
 
+        # A physical Mahjong set contains only four copies of each tile.  This
+        # also protects ready-hand enumeration from accepting a fifth copy as
+        # the winning tile when four copies are already concealed/exposed.
+        owned_tiles = test_tiles + [tile for meld in self.open_melds for tile in meld]
+        counts = Counter((tile.suit, tile.number) for tile in owned_tiles)
+        if any(count > 4 for count in counts.values()):
+            return False
+
         # 检查牌数：必须是14张才能胡（或11, 8, 5, 2 - 有明牌的情况）
         # 正常情况：14张（手牌）
         # 有明牌情况：手牌 + 明牌 = 14张，手牌可能是11, 8, 5, 2张
@@ -113,11 +122,15 @@ class PlayerState:
             return False, []
 
         valid_waiting_tiles = []
+        owned_tiles = self.hand_tiles + [tile for meld in self.open_melds for tile in meld]
+        owned_counts = Counter((tile.suit, tile.number) for tile in owned_tiles)
         # 只检查非缺门花色
         valid_suits = [s for s in Suit if s != self.missing_suit]
 
         for suit in valid_suits:
             for number in range(1, 10):
+                if owned_counts[(suit, number)] >= 4:
+                    continue
                 test_tile = Tile(suit, number)
                 if self.can_hu(test_tile):
                     valid_waiting_tiles.append(test_tile)
@@ -127,7 +140,7 @@ class PlayerState:
         is_ready, waiting_tiles = self.is_ready_with_missing_suit()
         if not is_ready: return 0, []
 
-        max_fan = 0
+        max_fan = -1
         max_fan_types = []
         for waiting_tile in waiting_tiles:
             test_hand = self.hand_tiles + [waiting_tile]
@@ -135,14 +148,15 @@ class PlayerState:
                 test_hand,
                 waiting_tile,
                 open_melds=self.open_melds,
-                is_self_drawn=False, # 查叫默认按自摸算最大番
+                # 查大叫按可能胡牌番型计算，不额外加入自摸番。
+                is_self_drawn=False,
                 gang_count=self.gang_count,
                 concealed_kong_count=self.concealed_kong_count
             )
             if fan > max_fan:
                 max_fan = fan
                 max_fan_types = fan_types
-        return max_fan, max_fan_types
+        return max(0, max_fan), max_fan_types
 
     def to_dict(self) -> Dict:
         return {
@@ -583,8 +597,9 @@ class MahjongGame:
         not_ready_players = []
 
         for p in valid_players:
-            max_fan, _ = p.calculate_potential_fan()
-            if max_fan > 0:
+            is_ready, _ = p.is_ready_with_missing_suit()
+            if is_ready:
+                max_fan, _ = p.calculate_potential_fan()
                 ready_players.append((p, max_fan))
             else:
                 not_ready_players.append(p)
