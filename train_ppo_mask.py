@@ -26,7 +26,9 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from belief_oracle import opponent_view_posterior
+from collect_belief_data import extract_opponent_public_features
 from game import MahjongGame, bot_decide_exchange, bot_decide_missing_suit, bot_decide_response, bot_decide_turn_action, parse_console_tile
+from train_belief_surrogate import BeliefSurrogate
 from mask_llm import MASKLLMAgent, PublicOpponentTracker, RiskGate, _clip, within_shanten
 from policy_metrics import discard_progress_metrics
 from prompt_builder import get_legal_actions
@@ -250,10 +252,13 @@ def play_one_game_ppo(
     max_steps: int = 200,
     deterministic: bool = False,
     collect_trajectory: bool = True,
+    mc_samples: int = 5,
+    belief_surrogate: Optional[BeliefSurrogate] = None,
 ) -> Tuple[float, Optional[Trajectory]]:
     """Play one game using PPO policy for agent decisions.
     
     Follows the same game loop structure as run_gate1_experiments.py.
+    If belief_surrogate is provided, use it instead of MC sampling.
     """
     device = next(policy.parameters()).device
     game, game_info = init_game_ppo(seed, opponent_style)
@@ -294,8 +299,19 @@ def play_one_game_ppo(
             # Agent's turn - use PPO policy
             z_state = z_tracker.summary()
             beliefs = {}
-            for target_pid in (1, 2, 3):
-                beliefs[f"P{target_pid}"] = opponent_view_posterior(game, target_pid, 0, num_samples=20)
+            if belief_surrogate is not None:
+                # Fast: learned surrogate (microsecond inference)
+                belief_surrogate.eval()
+                with torch.no_grad():
+                    for target_pid in (1, 2, 3):
+                        feats = extract_opponent_public_features(game, target_pid, 0)
+                        feat_tensor = torch.tensor(feats, dtype=torch.float32, device=device)
+                        prob = belief_surrogate(feat_tensor).item()
+                        beliefs[f"P{target_pid}"] = {"tenpai_prob": prob, "tenpai_confidence": prob}
+            else:
+                # Slow: MC sampling
+                for target_pid in (1, 2, 3):
+                    beliefs[f"P{target_pid}"] = opponent_view_posterior(game, target_pid, 0, num_samples=mc_samples)
             gate = risk_gate.compute(game, 0, z_state, beliefs)
             
             # Extract features and get parameters from policy
@@ -540,6 +556,8 @@ def train_ppo(
     save_dir: str = "ppo_checkpoints",
     device: str = "cpu",
     seed: int = 42,
+    mc_samples: int = 5,
+    belief_surrogate_path: Optional[str] = None,
 ):
     """Main PPO training loop."""
     # Set seeds
@@ -550,6 +568,15 @@ def train_ppo(
     # Create policy and optimizer
     policy = MASKPolicyNet().to(device)
     optimizer = optim.Adam(policy.parameters(), lr=lr)
+    
+    # Load belief surrogate if provided
+    belief_surrogate = None
+    if belief_surrogate_path and os.path.exists(belief_surrogate_path):
+        ckpt = torch.load(belief_surrogate_path, map_location=device)
+        belief_surrogate = BeliefSurrogate(input_dim=ckpt.get("input_dim", 18)).to(device)
+        belief_surrogate.load_state_dict(ckpt["model_state"])
+        belief_surrogate.eval()
+        print(f"Loaded belief surrogate from {belief_surrogate_path}")
     
     # Training buffer
     buffer = PPOBuffer()
@@ -582,6 +609,8 @@ def train_ppo(
                 max_steps=200,
                 deterministic=False,
                 collect_trajectory=True,
+                mc_samples=mc_samples,
+                belief_surrogate=belief_surrogate,
             )
             returns.append(net_score)
             if trajectory:
@@ -630,6 +659,8 @@ def train_ppo(
                     max_steps=200,
                     deterministic=True,
                     collect_trajectory=False,
+                    mc_samples=mc_samples,
+                    belief_surrogate=belief_surrogate,
                 )
                 eval_returns.append(net_score)
             
@@ -672,6 +703,8 @@ if __name__ == "__main__":
     parser.add_argument("--save-dir", type=str, default="ppo_checkpoints", help="Checkpoint directory")
     parser.add_argument("--device", type=str, default="cpu", help="Device (cpu/cuda)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--mc-samples", type=int, default=5, help="MC samples for belief estimation (lower=faster)")
+    parser.add_argument("--belief-surrogate", type=str, default=None, help="Path to belief_surrogate.pt (replaces MC if provided)")
     
     args = parser.parse_args()
     
@@ -688,4 +721,6 @@ if __name__ == "__main__":
         save_dir=args.save_dir,
         device=args.device,
         seed=args.seed,
+        mc_samples=args.mc_samples,
+        belief_surrogate_path=args.belief_surrogate,
     )
