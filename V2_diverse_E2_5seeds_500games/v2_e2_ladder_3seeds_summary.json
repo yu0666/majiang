@@ -1,0 +1,542 @@
+{
+  "config": {
+    "seeds": [
+      20260627,
+      20261627,
+      20262627,
+      20262727,
+      2026062728
+    ],
+    "games_per_seed_per_method": 500,
+    "backend": "local_qwen",
+    "model_path": "models/Qwen-Mahjong-V1-Mixed-SFT-Merged",
+    "adapter_path": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/qwen-v2-grpo-diverse-v1-l2/best_grpo_adapter",
+    "opponent_style": "responsive",
+    "defender_threat_model": "blend",
+    "defender_tell_weight": 0.3,
+    "l2_target_filter": "mc",
+    "l2_target_prob_threshold": 0.78,
+    "max_new_tokens": 64
+  },
+  "per_seed": [
+    {
+      "seed": 20260627,
+      "V2_L0": {
+        "games": 500,
+        "avg_net": -1.14,
+        "hu_rate": 0.3,
+        "dealin_rate": 0.21,
+        "avg_steps": 61.416,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.23159960745829244,
+        "FFR_counts": {
+          "false_folds": 944,
+          "false_fold_opportunities": 4076,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 124.78705705143511,
+          "p95": 161.7946340702474,
+          "p99": 190.89491409249604
+        },
+        "mode_counts": {
+          "exploit": 7775
+        }
+      },
+      "V2_L1": {
+        "games": 500,
+        "avg_net": 5.56,
+        "hu_rate": 0.274,
+        "dealin_rate": 0.202,
+        "avg_steps": 61.128,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.23632905373276272,
+        "FFR_counts": {
+          "false_folds": 994,
+          "false_fold_opportunities": 4206,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 191.3828100077808,
+          "p95": 228.5887219477445,
+          "p99": 255.3395179565996
+        },
+        "mode_counts": {
+          "exploit": 5045,
+          "safe": 2809
+        }
+      },
+      "V2_L2_MC": {
+        "games": 500,
+        "avg_net": 19.98,
+        "hu_rate": 0.122,
+        "dealin_rate": 0.104,
+        "avg_steps": 58.02,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 267
+        },
+        "FFR": 0.53573742172317,
+        "FFR_counts": {
+          "false_folds": 2481,
+          "false_fold_opportunities": 4631,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 552.2191789932549,
+          "p95": 845.2972539234906,
+          "p99": 1008.6165841203183
+        },
+        "mode_counts": {
+          "exploit": 6938,
+          "deceive": 267,
+          "safe": 39
+        }
+      }
+    },
+    {
+      "seed": 20261627,
+      "V2_L0": {
+        "games": 500,
+        "avg_net": 38.74,
+        "hu_rate": 0.3,
+        "dealin_rate": 0.18,
+        "avg_steps": 61.412,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.2587751149842653,
+        "FFR_counts": {
+          "false_folds": 1069,
+          "false_fold_opportunities": 4131,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 98.72813988476992,
+          "p95": 105.16657587140799,
+          "p99": 115.29314192011952
+        },
+        "mode_counts": {
+          "exploit": 7729
+        }
+      },
+      "V2_L1": {
+        "games": 500,
+        "avg_net": -22.68,
+        "hu_rate": 0.262,
+        "dealin_rate": 0.154,
+        "avg_steps": 61.382,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.25801169590643275,
+        "FFR_counts": {
+          "false_folds": 1103,
+          "false_fold_opportunities": 4275,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 165.8158008940518,
+          "p95": 184.22191101126373,
+          "p99": 220.0993220321834
+        },
+        "mode_counts": {
+          "exploit": 5423,
+          "safe": 2443
+        }
+      },
+      "V2_L2_MC": {
+        "games": 500,
+        "avg_net": 14.24,
+        "hu_rate": 0.124,
+        "dealin_rate": 0.072,
+        "avg_steps": 57.908,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 277
+        },
+        "FFR": 0.5532984714400644,
+        "FFR_counts": {
+          "false_folds": 2751,
+          "false_fold_opportunities": 4972,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 509.52889304608107,
+          "p95": 715.5575009528548,
+          "p99": 778.6186570301652
+        },
+        "mode_counts": {
+          "exploit": 6885,
+          "deceive": 277,
+          "safe": 44
+        }
+      }
+    },
+    {
+      "seed": 20262627,
+      "V2_L0": {
+        "games": 500,
+        "avg_net": 43.54,
+        "hu_rate": 0.258,
+        "dealin_rate": 0.202,
+        "avg_steps": 61.478,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.27264083670073685,
+        "FFR_counts": {
+          "false_folds": 1147,
+          "false_fold_opportunities": 4207,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 98.02352800033987,
+          "p95": 104.273950913921,
+          "p99": 111.79620702750981
+        },
+        "mode_counts": {
+          "exploit": 7773
+        }
+      },
+      "V2_L1": {
+        "games": 500,
+        "avg_net": 16.48,
+        "hu_rate": 0.262,
+        "dealin_rate": 0.176,
+        "avg_steps": 61.266,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.2770708283313325,
+        "FFR_counts": {
+          "false_folds": 1154,
+          "false_fold_opportunities": 4165,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 164.66682287864387,
+          "p95": 180.4298311471939,
+          "p99": 187.28673295117915
+        },
+        "mode_counts": {
+          "exploit": 5211,
+          "safe": 2534
+        }
+      },
+      "V2_L2_MC": {
+        "games": 500,
+        "avg_net": -14.9,
+        "hu_rate": 0.096,
+        "dealin_rate": 0.06,
+        "avg_steps": 57.934,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 303
+        },
+        "FFR": 0.5487465181058496,
+        "FFR_counts": {
+          "false_folds": 2758,
+          "false_fold_opportunities": 5026,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 510.3687590453774,
+          "p95": 717.1259690076113,
+          "p99": 776.0393999051303
+        },
+        "mode_counts": {
+          "exploit": 6861,
+          "deceive": 303,
+          "safe": 68
+        }
+      }
+    },
+    {
+      "seed": 20262727,
+      "V2_L0": {
+        "games": 500,
+        "avg_net": 35.56,
+        "hu_rate": 0.254,
+        "dealin_rate": 0.216,
+        "avg_steps": 61.5,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.2690943485457555,
+        "FFR_counts": {
+          "false_folds": 1138,
+          "false_fold_opportunities": 4229,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 98.2779620680958,
+          "p95": 104.1561970487237,
+          "p99": 112.70782700739801
+        },
+        "mode_counts": {
+          "exploit": 7841
+        }
+      },
+      "V2_L1": {
+        "games": 500,
+        "avg_net": -4.54,
+        "hu_rate": 0.25,
+        "dealin_rate": 0.186,
+        "avg_steps": 61.292,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.2824482019528459,
+        "FFR_counts": {
+          "false_folds": 1186,
+          "false_fold_opportunities": 4199,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 164.80919811874628,
+          "p95": 180.32726319506764,
+          "p99": 186.48955202661455
+        },
+        "mode_counts": {
+          "exploit": 5252,
+          "safe": 2583
+        }
+      },
+      "V2_L2_MC": {
+        "games": 500,
+        "avg_net": 2.22,
+        "hu_rate": 0.114,
+        "dealin_rate": 0.064,
+        "avg_steps": 57.924,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 286
+        },
+        "FFR": 0.5549109821964393,
+        "FFR_counts": {
+          "false_folds": 2774,
+          "false_fold_opportunities": 4999,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 511.22771110385656,
+          "p95": 715.5460380017757,
+          "p99": 768.8375799916685
+        },
+        "mode_counts": {
+          "exploit": 6829,
+          "deceive": 286,
+          "safe": 45
+        }
+      }
+    },
+    {
+      "seed": 2026062728,
+      "V2_L0": {
+        "games": 500,
+        "avg_net": 11.3,
+        "hu_rate": 0.234,
+        "dealin_rate": 0.192,
+        "avg_steps": 61.338,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.2763960581886438,
+        "FFR_counts": {
+          "false_folds": 1178,
+          "false_fold_opportunities": 4262,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 98.20300503633916,
+          "p95": 103.97239099256694,
+          "p99": 109.47558493353426
+        },
+        "mode_counts": {
+          "exploit": 7996
+        }
+      },
+      "V2_L1": {
+        "games": 500,
+        "avg_net": -0.1,
+        "hu_rate": 0.22,
+        "dealin_rate": 0.166,
+        "avg_steps": 61.146,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.2917144824420473,
+        "FFR_counts": {
+          "false_folds": 1271,
+          "false_fold_opportunities": 4357,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 165.01405811868608,
+          "p95": 180.4870490450412,
+          "p99": 185.56331982836127
+        },
+        "mode_counts": {
+          "exploit": 5348,
+          "safe": 2626
+        }
+      },
+      "V2_L2_MC": {
+        "games": 500,
+        "avg_net": 8.8,
+        "hu_rate": 0.088,
+        "dealin_rate": 0.066,
+        "avg_steps": 58.024,
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 315
+        },
+        "FFR": 0.5769386106623586,
+        "FFR_counts": {
+          "false_folds": 2857,
+          "false_fold_opportunities": 4952,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 509.7940010018647,
+          "p95": 716.5383510291576,
+          "p99": 784.5661081373692
+        },
+        "mode_counts": {
+          "exploit": 6910,
+          "deceive": 315,
+          "safe": 78
+        }
+      }
+    }
+  ],
+  "aggregate": {
+    "mean": {
+      "V2_L0": {
+        "avg_net": 25.6,
+        "hu_rate": 0.2692,
+        "dealin_rate": 0.2,
+        "DIR": 0.0,
+        "FFR": 0.2617011931755388,
+        "avg_steps": 61.4288,
+        "deceive_windows": 0,
+        "induced_dealin": 0,
+        "false_folds": 5476,
+        "false_fold_opportunities": 20905,
+        "latency_ms": {
+          "p50": 103.60393840819597,
+          "p95": 115.87274977937341,
+          "p99": 128.03353499621153
+        },
+        "mode_counts": {
+          "exploit": 39114,
+          "safe": 0,
+          "deceive": 0
+        }
+      },
+      "V2_L1": {
+        "avg_net": -1.056,
+        "hu_rate": 0.2536,
+        "dealin_rate": 0.1768,
+        "DIR": 0.0,
+        "FFR": 0.26911485247308425,
+        "avg_steps": 61.2428,
+        "deceive_windows": 0,
+        "induced_dealin": 0,
+        "false_folds": 5708,
+        "false_fold_opportunities": 21202,
+        "latency_ms": {
+          "p50": 170.33773800358176,
+          "p95": 190.8109552692622,
+          "p99": 206.9556889589876
+        },
+        "mode_counts": {
+          "exploit": 26279,
+          "safe": 12995,
+          "deceive": 0
+        }
+      },
+      "V2_L2_MC": {
+        "avg_net": 6.0680000000000005,
+        "hu_rate": 0.1088,
+        "dealin_rate": 0.0732,
+        "DIR": 0.0,
+        "FFR": 0.5539264008255764,
+        "avg_steps": 57.962,
+        "deceive_windows": 1448,
+        "induced_dealin": 0,
+        "false_folds": 13621,
+        "false_fold_opportunities": 24580,
+        "latency_ms": {
+          "p50": 518.6277086380869,
+          "p95": 742.013022582978,
+          "p99": 823.3356658369303
+        },
+        "mode_counts": {
+          "exploit": 34423,
+          "safe": 274,
+          "deceive": 1448
+        }
+      }
+    },
+    "pairwise": {
+      "V2_L2_MC_vs_V2_L1_avg_net": {
+        "n": 5,
+        "mean_diff": 7.1240000000000006,
+        "sd_diff": 24.631676353833495,
+        "t": 0.646717992022874,
+        "df": 4,
+        "t_p_value": 0.5530524000636423,
+        "sign_test_p": 0.375
+      },
+      "V2_L2_MC_vs_V2_L0_avg_net": {
+        "n": 5,
+        "mean_diff": -19.532,
+        "sd_diff": 30.297889695488696,
+        "t": -1.4415155700771136,
+        "df": 4,
+        "t_p_value": 0.22288749371221192,
+        "sign_test_p": 0.375
+      },
+      "V2_L1_vs_V2_L0_avg_net": {
+        "n": 5,
+        "mean_diff": -26.656,
+        "sd_diff": 26.14769741296545,
+        "t": -2.2795363992042823,
+        "df": 4,
+        "t_p_value": 0.08482993719004722,
+        "sign_test_p": 0.375
+      }
+    }
+  }
+}

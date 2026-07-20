@@ -1,0 +1,29 @@
+{
+  "input": "Reranker_grpo_oracle_ckpt100/candidate_oracle_states.jsonl",
+  "output": "Reranker_grpo_data/reranker_grpo_env_permuted_smoke.jsonl",
+  "rows": 114,
+  "outcomes": {
+    "low_reward_range": 1,
+    "kept": 19
+  },
+  "modes": {
+    "exploit": 114
+  },
+  "permutations_per_state": 6,
+  "reference_is_best_rate": 0.2631578947368421,
+  "best_action_position": {
+    "1": 23,
+    "2": 20,
+    "3": 18,
+    "4": 18,
+    "5": 18,
+    "6": 17
+  },
+  "utility": {
+    "return_clip": 80.0,
+    "hu_bonus": 20.0,
+    "dealin_penalty": 20.0,
+    "reward_scale": 20.0,
+    "min_reward_range": 5.0
+  }
+}

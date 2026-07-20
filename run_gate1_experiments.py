@@ -693,6 +693,11 @@ def make_step_trace(
         "chosen_result_shanten": chosen_result_shanten,
         "best_result_shanten": best_result_shanten,
         "shanten_regret": shanten_regret,
+        "belief_shaping": decision_state.get("belief_shaping", False),
+        "avg_belief_conf": decision_state.get("avg_belief_conf"),
+        "b_term": decision_state.get("b_term"),
+        "d_term": decision_state.get("d_term"),
+        "f_term": decision_state.get("f_term"),
     }
 
 
@@ -1425,7 +1430,7 @@ def main() -> None:
     parser.add_argument("--mask-candidate-scoring", action="store_true",
                         help="Rank candidates by conditional log probability instead of free generation.")
     parser.add_argument("--mask-reranker-max-candidates", type=int, default=6)
-    parser.add_argument("--mask-gate-policy", choices=["rule", "learned", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5"], default="rule")
+    parser.add_argument("--mask-gate-policy", choices=["rule", "learned", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"], default="rule")
     parser.add_argument("--gate-model-path", default=None)
     parser.add_argument("--gate-adapter-path", default=None)
     parser.add_argument("--gate-max-new-tokens", type=int, default=8)

@@ -1,0 +1,192 @@
+{
+  "model_path": "models/Qwen-Mahjong-V1-Mixed-SFT-Merged",
+  "data_file": "Reranker_validation_public_1seed_20games/reranker_validation.jsonl",
+  "per_mode_limit": 100,
+  "examples": 231,
+  "adapters": {
+    "base": {
+      "overall": {
+        "examples": 231,
+        "json_parse_rate": 1.0,
+        "raw_legal_rate": 1.0,
+        "raw_accuracy": 0.9393939393939394,
+        "deployed_accuracy": 0.9393939393939394,
+        "mean_latency_ms": 162.5995220590254
+      },
+      "by_mode": {
+        "deceive": {
+          "examples": 31,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 0.8387096774193549,
+          "deployed_accuracy": 0.8387096774193549,
+          "mean_latency_ms": 167.59595481468546
+        },
+        "exploit": {
+          "examples": 100,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 0.95,
+          "deployed_accuracy": 0.95,
+          "mean_latency_ms": 158.57083006296307
+        },
+        "safe": {
+          "examples": 100,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 0.96,
+          "deployed_accuracy": 0.96,
+          "mean_latency_ms": 165.07931990083307
+        }
+      },
+      "deployed_action_counts": {
+        "d 3条": 12,
+        "d 7条": 7,
+        "d 6条": 13,
+        "d 3万": 12,
+        "d 4条": 16,
+        "d 5条": 11,
+        "d 1条": 18,
+        "d 8万": 7,
+        "d 5万": 8,
+        "d 4筒": 1,
+        "d 5筒": 4,
+        "d 6万": 11,
+        "d 2筒": 1,
+        "d 9筒": 2,
+        "d 2万": 16,
+        "d 7万": 22,
+        "d 6筒": 4,
+        "d 8条": 3,
+        "d 4万": 27,
+        "d 2条": 7,
+        "d 1万": 17,
+        "d 1筒": 5,
+        "d 9万": 6,
+        "d 3筒": 1
+      }
+    },
+    "qwen-v1-candidate-reranker-sft/checkpoint-50": {
+      "overall": {
+        "examples": 231,
+        "json_parse_rate": 1.0,
+        "raw_legal_rate": 1.0,
+        "raw_accuracy": 0.9956709956709957,
+        "deployed_accuracy": 0.9956709956709957,
+        "mean_latency_ms": 311.12455377794674
+      },
+      "by_mode": {
+        "deceive": {
+          "examples": 31,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 0.967741935483871,
+          "deployed_accuracy": 0.967741935483871,
+          "mean_latency_ms": 311.48583423196067
+        },
+        "exploit": {
+          "examples": 100,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 1.0,
+          "deployed_accuracy": 1.0,
+          "mean_latency_ms": 319.41067181993276
+        },
+        "safe": {
+          "examples": 100,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 1.0,
+          "deployed_accuracy": 1.0,
+          "mean_latency_ms": 302.7264387952164
+        }
+      },
+      "deployed_action_counts": {
+        "d 3条": 13,
+        "d 7条": 8,
+        "d 6条": 12,
+        "d 3万": 11,
+        "d 4条": 15,
+        "d 5条": 10,
+        "d 1条": 21,
+        "d 8万": 7,
+        "d 2条": 10,
+        "d 5万": 9,
+        "d 4筒": 1,
+        "d 5筒": 4,
+        "d 6万": 10,
+        "d 2筒": 1,
+        "d 7筒": 1,
+        "d 2万": 17,
+        "d 7万": 22,
+        "d 6筒": 2,
+        "d 8条": 2,
+        "d 4万": 27,
+        "d 1万": 18,
+        "d 9万": 7,
+        "d 1筒": 3
+      }
+    },
+    "qwen-v1-candidate-reranker-sft/checkpoint-100": {
+      "overall": {
+        "examples": 231,
+        "json_parse_rate": 1.0,
+        "raw_legal_rate": 1.0,
+        "raw_accuracy": 1.0,
+        "deployed_accuracy": 1.0,
+        "mean_latency_ms": 362.8282560997147
+      },
+      "by_mode": {
+        "deceive": {
+          "examples": 31,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 1.0,
+          "deployed_accuracy": 1.0,
+          "mean_latency_ms": 359.8181562152721
+        },
+        "exploit": {
+          "examples": 100,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 1.0,
+          "deployed_accuracy": 1.0,
+          "mean_latency_ms": 365.11269429465756
+        },
+        "safe": {
+          "examples": 100,
+          "json_parse_rate": 1.0,
+          "raw_legal_rate": 1.0,
+          "raw_accuracy": 1.0,
+          "deployed_accuracy": 1.0,
+          "mean_latency_ms": 361.47694886894897
+        }
+      },
+      "deployed_action_counts": {
+        "d 3条": 13,
+        "d 2万": 18,
+        "d 6条": 12,
+        "d 3万": 11,
+        "d 7条": 7,
+        "d 4条": 15,
+        "d 5条": 10,
+        "d 1条": 21,
+        "d 8万": 7,
+        "d 2条": 10,
+        "d 5万": 9,
+        "d 4筒": 1,
+        "d 5筒": 4,
+        "d 6万": 10,
+        "d 2筒": 1,
+        "d 7筒": 1,
+        "d 7万": 22,
+        "d 6筒": 2,
+        "d 8条": 2,
+        "d 4万": 27,
+        "d 1万": 18,
+        "d 9万": 7,
+        "d 1筒": 3
+      }
+    }
+  }
+}

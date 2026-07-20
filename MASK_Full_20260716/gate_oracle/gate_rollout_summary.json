@@ -1,0 +1,12 @@
+{
+  "states": 400,
+  "mode_evaluations": {
+    "exploit": 400,
+    "safe": 400,
+    "deceive": 303
+  },
+  "model_path": "models/Qwen-Mahjong-V1-Aligned-SFT-20260714-Merged",
+  "adapter_path": "qwen-v2-aligned-grpo-20260714/best_grpo_adapter",
+  "rollouts_per_mode": 8,
+  "output": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/MASK_Full_20260716/gate_oracle/gate_rollout_states.jsonl"
+}

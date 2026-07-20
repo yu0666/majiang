@@ -1,0 +1,12 @@
+{
+  "states": 50,
+  "mode_evaluations": {
+    "exploit": 50,
+    "safe": 50,
+    "deceive": 40
+  },
+  "model_path": "models/Qwen-Mahjong-V1-Clean-SFT-20260715_v1_clean-Merged",
+  "adapter_path": "",
+  "rollouts_per_mode": 4,
+  "output": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Gate_Route_20260715_h2_gate_v1clean/gate_oracle/chunks/chunk_0008/gate_rollout_states.jsonl"
+}

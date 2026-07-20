@@ -1,0 +1,130 @@
+{
+  "config": {
+    "backend": "local_qwen",
+    "model_path": "models/Qwen-Mahjong-V1-Aligned-SFT-20260714-Merged",
+    "adapter_path": "qwen-v2-aligned-grpo-20260714/best_grpo_adapter",
+    "temperature": 0.0,
+    "opponent_style": "responsive",
+    "defender": {
+      "threat_threshold": 0.7,
+      "oracle_samples": 30,
+      "beta": 2.0,
+      "danger_threshold": 1,
+      "ffr_hand_shanten": 1,
+      "threat_model": "blend",
+      "tell_weight": 0.3,
+      "tell_window": 6,
+      "learned_model_path": "Defender_danger_model/danger_model.pth"
+    },
+    "quotas": {
+      "exploit": 240,
+      "safe": 180,
+      "deceive": 180
+    },
+    "rollouts_per_action": 12,
+    "max_candidates": 6,
+    "continuation": "rule_mask",
+    "augment_modes": true,
+    "oracle_estimator": "even-index selection / odd-index held-out evaluation",
+    "seed": 2026071601,
+    "rollout_seed": 816000
+  },
+  "completed_quotas": {
+    "exploit": 240,
+    "safe": 180,
+    "deceive": 180
+  },
+  "quota_met": true,
+  "metrics": {
+    "evaluated": {
+      "states": 600,
+      "baseline_mean_return": 32.21111111111111,
+      "oracle_mean_return": 34.486111111111114,
+      "mean_oracle_advantage": 2.275,
+      "median_oracle_advantage": 0.0,
+      "oracle_advantage_std": 101.26745162433171,
+      "oracle_advantage_t_ci_95": [
+        -5.844340552434987,
+        10.394340552434988
+      ],
+      "oracle_advantage_t_p_value": 0.5823295108599809,
+      "positive_advantage_rate": 0.18833333333333332,
+      "negative_advantage_rate": 0.18166666666666667,
+      "zero_advantage_rate": 0.63,
+      "oracle_action_change_rate": 0.43166666666666664,
+      "mean_candidate_count": 2.53
+    },
+    "by_mode": {
+      "deceive": {
+        "states": 180,
+        "baseline_mean_return": 39.074074074074076,
+        "oracle_mean_return": 44.9537037037037,
+        "mean_oracle_advantage": 5.87962962962963,
+        "median_oracle_advantage": 0.0,
+        "oracle_advantage_std": 87.8541746720715,
+        "oracle_advantage_t_ci_95": [
+          -7.0420944272232635,
+          18.80135368648252
+        ],
+        "oracle_advantage_t_p_value": 0.3704495645653063,
+        "positive_advantage_rate": 0.18888888888888888,
+        "negative_advantage_rate": 0.18333333333333332,
+        "zero_advantage_rate": 0.6277777777777778,
+        "oracle_action_change_rate": 0.4111111111111111,
+        "mean_candidate_count": 2.5555555555555554
+      },
+      "exploit": {
+        "states": 240,
+        "baseline_mean_return": 31.77777777777778,
+        "oracle_mean_return": 32.9375,
+        "mean_oracle_advantage": 1.1597222222222219,
+        "median_oracle_advantage": 0.0,
+        "oracle_advantage_std": 62.693753218511226,
+        "oracle_advantage_t_ci_95": [
+          -6.812355368226131,
+          9.131799812670575
+        ],
+        "oracle_advantage_t_p_value": 0.7746875271226759,
+        "positive_advantage_rate": 0.19583333333333333,
+        "negative_advantage_rate": 0.18333333333333332,
+        "zero_advantage_rate": 0.6208333333333333,
+        "oracle_action_change_rate": 0.4583333333333333,
+        "mean_candidate_count": 2.65
+      },
+      "safe": {
+        "states": 180,
+        "baseline_mean_return": 25.925925925925927,
+        "oracle_mean_return": 26.083333333333332,
+        "mean_oracle_advantage": 0.15740740740740772,
+        "median_oracle_advantage": 0.0,
+        "oracle_advantage_std": 146.0538978197759,
+        "oracle_advantage_t_ci_95": [
+          -21.324419405028493,
+          21.63923421984331
+        ],
+        "oracle_advantage_t_p_value": 0.9884796265572111,
+        "positive_advantage_rate": 0.17777777777777778,
+        "negative_advantage_rate": 0.17777777777777778,
+        "zero_advantage_rate": 0.6444444444444445,
+        "oracle_action_change_rate": 0.4166666666666667,
+        "mean_candidate_count": 2.3444444444444446
+      }
+    },
+    "considered_states": {
+      "exploit": 3606,
+      "safe": 2744,
+      "deceive": 5067
+    },
+    "skipped_states": {
+      "exploit:fewer_than_two_candidates": 566,
+      "safe:fewer_than_two_candidates": 1374,
+      "deceive:fewer_than_two_candidates": 4887
+    },
+    "model_output_diagnostics": {
+      "llm_called_states": 600,
+      "llm_parsed_states": 0,
+      "parse_success_rate_when_called": 0.0
+    },
+    "interpretation": "The action is selected on even-index rollouts and evaluated on held-out odd-index rollouts. The reported advantage estimates a finite-sample rollout selector, not an optimistic in-sample maximum. A positive gap means that selector generalized beyond the deployed action under the configured continuation policy."
+  }
+}

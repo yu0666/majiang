@@ -1,0 +1,212 @@
+{
+  "config": {
+    "seeds": [
+      50260627,
+      50261627,
+      50262627,
+      50263627,
+      50264627,
+      50265627,
+      50266627,
+      50267627,
+      50268627,
+      50269627
+    ],
+    "variants": [
+      "L2_continuous_v4"
+    ],
+    "games_per_seed_per_variant": 1000,
+    "opponent_style": "neural",
+    "neural_opponent_model_path": "Neural_opponent_model/neural_opponent_policy.pth",
+    "neural_ffr": "proxy: own_shanten<=1, P0_shanten>1, neural action more conservative than min-shanten push",
+    "backend": "local_qwen",
+    "model_path": "models/Qwen-Mahjong-V1-Mixed-SFT-Merged",
+    "adapter_path": "",
+    "gpu": "0",
+    "parallel_workers": 3
+  },
+  "aggregate": {
+    "L2_continuous_v4": {
+      "seeds": 10,
+      "games": 10000,
+      "avg_net": 19.907,
+      "hu_rate": 0.7484999999999999,
+      "dealin_rate": 0.1151,
+      "FFR": 0.3874303340460584,
+      "FFR_counts": {
+        "false_folds": 11053,
+        "false_fold_opportunities": 28529,
+        "definition": "neural_proxy when opponent-style=neural"
+      },
+      "DIR_totals": {
+        "induced_dealin": 157,
+        "deceive_windows": 5414
+      },
+      "mode_counts": {
+        "exploit": 51344,
+        "safe": 60034,
+        "deceive": 5414
+      },
+      "latency_ms": {
+        "p50": 38.63766014110297,
+        "p95": 144.58751243073493,
+        "p99": 190.67382272332907
+      }
+    }
+  },
+  "per_seed": {
+    "L2_continuous_v4": [
+      {
+        "seed": 50260627,
+        "games": 1000,
+        "avg_net": 17.02,
+        "hu_rate": 0.766,
+        "dealin_rate": 0.107,
+        "FFR": 0.38280746941403737,
+        "false_folds": 1189,
+        "false_fold_opportunities": 3106,
+        "exploit": 5130,
+        "safe": 5982,
+        "deceive": 552,
+        "induced_dealin": 18,
+        "deceive_windows": 552
+      },
+      {
+        "seed": 50261627,
+        "games": 1000,
+        "avg_net": 31.76,
+        "hu_rate": 0.752,
+        "dealin_rate": 0.126,
+        "FFR": 0.3901869158878505,
+        "false_folds": 1169,
+        "false_fold_opportunities": 2996,
+        "exploit": 5129,
+        "safe": 6080,
+        "deceive": 516,
+        "induced_dealin": 11,
+        "deceive_windows": 516
+      },
+      {
+        "seed": 50262627,
+        "games": 1000,
+        "avg_net": 22.01,
+        "hu_rate": 0.756,
+        "dealin_rate": 0.119,
+        "FFR": 0.38125948406676785,
+        "false_folds": 1005,
+        "false_fold_opportunities": 2636,
+        "exploit": 5168,
+        "safe": 5896,
+        "deceive": 542,
+        "induced_dealin": 13,
+        "deceive_windows": 542
+      },
+      {
+        "seed": 50263627,
+        "games": 1000,
+        "avg_net": 18.82,
+        "hu_rate": 0.762,
+        "dealin_rate": 0.11,
+        "FFR": 0.39522184300341295,
+        "false_folds": 1158,
+        "false_fold_opportunities": 2930,
+        "exploit": 4960,
+        "safe": 6174,
+        "deceive": 533,
+        "induced_dealin": 20,
+        "deceive_windows": 533
+      },
+      {
+        "seed": 50264627,
+        "games": 1000,
+        "avg_net": 13.88,
+        "hu_rate": 0.729,
+        "dealin_rate": 0.118,
+        "FFR": 0.3871304347826087,
+        "false_folds": 1113,
+        "false_fold_opportunities": 2875,
+        "exploit": 5093,
+        "safe": 6271,
+        "deceive": 533,
+        "induced_dealin": 15,
+        "deceive_windows": 533
+      },
+      {
+        "seed": 50265627,
+        "games": 1000,
+        "avg_net": 20.92,
+        "hu_rate": 0.734,
+        "dealin_rate": 0.12,
+        "FFR": 0.38847583643122674,
+        "false_folds": 1045,
+        "false_fold_opportunities": 2690,
+        "exploit": 5098,
+        "safe": 5982,
+        "deceive": 561,
+        "induced_dealin": 15,
+        "deceive_windows": 561
+      },
+      {
+        "seed": 50266627,
+        "games": 1000,
+        "avg_net": 17.36,
+        "hu_rate": 0.742,
+        "dealin_rate": 0.124,
+        "FFR": 0.38204165244110616,
+        "false_folds": 1119,
+        "false_fold_opportunities": 2929,
+        "exploit": 5230,
+        "safe": 5972,
+        "deceive": 539,
+        "induced_dealin": 15,
+        "deceive_windows": 539
+      },
+      {
+        "seed": 50267627,
+        "games": 1000,
+        "avg_net": 29.87,
+        "hu_rate": 0.761,
+        "dealin_rate": 0.093,
+        "FFR": 0.374911158493248,
+        "false_folds": 1055,
+        "false_fold_opportunities": 2814,
+        "exploit": 5029,
+        "safe": 5848,
+        "deceive": 551,
+        "induced_dealin": 19,
+        "deceive_windows": 551
+      },
+      {
+        "seed": 50268627,
+        "games": 1000,
+        "avg_net": 17.74,
+        "hu_rate": 0.734,
+        "dealin_rate": 0.127,
+        "FFR": 0.39581831290555153,
+        "false_folds": 1098,
+        "false_fold_opportunities": 2774,
+        "exploit": 5236,
+        "safe": 6018,
+        "deceive": 557,
+        "induced_dealin": 18,
+        "deceive_windows": 557
+      },
+      {
+        "seed": 50269627,
+        "games": 1000,
+        "avg_net": 9.69,
+        "hu_rate": 0.749,
+        "dealin_rate": 0.107,
+        "FFR": 0.3965455199712127,
+        "false_folds": 1102,
+        "false_fold_opportunities": 2779,
+        "exploit": 5271,
+        "safe": 5811,
+        "deceive": 530,
+        "induced_dealin": 13,
+        "deceive_windows": 530
+      }
+    ]
+  },
+  "paired_net": {}
+}

@@ -1,0 +1,31 @@
+{
+  "input": "Reranker_aligned_20260715/oracle_train/candidate_oracle_states.jsonl",
+  "output": "Reranker_aligned_20260715/grpo_data/reranker_grpo_env_action.jsonl",
+  "rows": 80,
+  "outcomes": {
+    "kept": 34,
+    "low_reward_range": 14
+  },
+  "modes": {
+    "exploit": 40,
+    "deceive": 19,
+    "safe": 21
+  },
+  "permutations_per_state": 3,
+  "completion_format": "action_only",
+  "reference_in_prompt": false,
+  "reference_is_best_rate": 0.45,
+  "best_action_position": {
+    "1": 35,
+    "2": 32,
+    "3": 12,
+    "4": 1
+  },
+  "utility": {
+    "return_clip": 80.0,
+    "hu_bonus": 20.0,
+    "dealin_penalty": 20.0,
+    "reward_scale": 20.0,
+    "min_reward_range": 5.0
+  }
+}

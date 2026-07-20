@@ -1,0 +1,186 @@
+{
+  "created_for": "Gate1 minimal H1/H2 pipeline",
+  "backend": "local_qwen",
+  "model_path": "models/Qwen-Mahjong-V1-Mixed-SFT-Merged",
+  "adapter_path": "qwen-v2-grpo-diverse-v1-l2/best_grpo_adapter",
+  "temperature": 0.0,
+  "belief_adapter_path": null,
+  "reranker_model_path": null,
+  "reranker_adapter_path": null,
+  "gate_policy": "learned",
+  "gate_model_path": "models/Qwen-Mahjong-H2-Gate-SFT-20260716_h2_full_learned-Merged",
+  "gate_adapter_path": "qwen-h2-gate-grpo-20260716_h2_full_learned/best_grpo_adapter",
+  "opponent_style": "neural",
+  "methods": [
+    "llm_mask"
+  ],
+  "games_per_method": 500,
+  "defender_cfg": null,
+  "mask_cfg": {
+    "oracle_samples": 30,
+    "beta": 2.0,
+    "danger_threshold": 1,
+    "dir_ready_threshold": 0,
+    "deceive_threat_ceiling": 0.5,
+    "forced_deceive": "off",
+    "deceive_style": "threat",
+    "threat_allow_break_ready": false,
+    "threat_max_result_shanten": 0,
+    "threat_max_shanten_regret": 0,
+    "threat_min_ukeire_ratio": 1.0,
+    "threat_gate_threshold": 0.7,
+    "threat_gate_margin": 0.12,
+    "threat_min_delta": 0.03,
+    "threat_gate_mode": "cross",
+    "threat_response_model": "blend",
+    "threat_response_tell_weight": 0.3,
+    "threat_tell_window": 6,
+    "threat_max_start_shanten": 2,
+    "threat_require_non_exploit": true,
+    "threat_require_real_target": true,
+    "threat_target_max_shanten": 1,
+    "threat_target_signal": "mc",
+    "threat_target_prob_threshold": 0.78,
+    "log_counterfactual": false,
+    "candidate_reranker": false,
+    "candidate_scoring": false,
+    "reranker_max_candidates": 6,
+    "gate_policy": "learned",
+    "snapshot_samples": 1,
+    "snapshot_crn_seeds": 1
+  },
+  "E1_belief": {
+    "samples": 0,
+    "note": "No belief samples were collected."
+  },
+  "E2_ladder": {
+    "llm_mask": {
+      "games": 500,
+      "avg_net": 34.24,
+      "net_distribution": {
+        "median": 0.0,
+        "std": 510.3763536842196,
+        "trimmed_mean_10pct": 5.1,
+        "p10": -70.0,
+        "p90": 120.0,
+        "min": -5130.0,
+        "max": 3840.0
+      },
+      "hu_rate": 0.366,
+      "avg_hu_fan": 1.3879781420765027,
+      "fan_per_game": 0.508,
+      "dealin_rate": 0.188,
+      "avg_steps": 63.59,
+      "end_state": {
+        "wall_exhaustion_rate": 0.948,
+        "final_ready_rate_non_hu": 0.25236593059936907,
+        "hua_zhu_rate_non_hu": 0.006309148264984227,
+        "avg_final_shanten_non_hu": 0.7949526813880127
+      },
+      "conditional_net": {
+        "hu": 83.16939890710383,
+        "dealin": -121.06382978723404,
+        "neither_hu_nor_dealin": 59.55156950672646
+      },
+      "action_efficiency": {
+        "avg_shanten_regret": 0.14346809074848543,
+        "positive_shanten_regret_rate": 0.14346809074848543,
+        "safe_overrides": 4
+      },
+      "learned_gate": {
+        "used_states": 7834,
+        "parsed_outputs": 7834,
+        "parse_rate": 1.0,
+        "mode_counts": {
+          "exploit": 7729,
+          "safe": 73,
+          "deceive": 32
+        }
+      },
+      "DIR": 0.0,
+      "DIR_counts": {
+        "induced_dealin": 0,
+        "deceive_windows": 32
+      },
+      "FFR": 0.36398590195450176,
+      "FFR_counts": {
+        "false_folds": 1136,
+        "false_fold_opportunities": 3121,
+        "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+      },
+      "decision_latency_ms": {
+        "p50": 892.5917919259518,
+        "p95": 1068.1258360855281,
+        "p99": 1164.0583970583975
+      },
+      "mode_counts": {
+        "exploit": 7765,
+        "safe": 73,
+        "deceive": 32
+      },
+      "candidate_reranker": {
+        "enabled_states": 0,
+        "used_states": 0,
+        "changed_actions": 0,
+        "parsed_outputs": 0,
+        "use_rate": 0.0,
+        "change_rate_when_used": 0.0,
+        "parse_rate_when_used": 0.0
+      }
+    }
+  },
+  "FFR_attribution": {
+    "ffr_opportunity_events": 3121,
+    "false_fold_events": 1136,
+    "ffr": 0.36398590195450176,
+    "opportunities_in_deceive_window": 31,
+    "false_folds_in_deceive_window": 14,
+    "by_last_p0_mode": {
+      "deceive": {
+        "opportunities": 31,
+        "false_folds": 12,
+        "ffr": 0.3870967741935484,
+        "avg_threat_at_fold": 0.0,
+        "avg_last_p0_threat_delta_for_defender": 0.0,
+        "positive_delta_rate": null
+      },
+      "exploit": {
+        "opportunities": 3056,
+        "false_folds": 1106,
+        "ffr": 0.3619109947643979,
+        "avg_threat_at_fold": 0.0,
+        "avg_last_p0_threat_delta_for_defender": 0.0,
+        "positive_delta_rate": null
+      },
+      "safe": {
+        "opportunities": 34,
+        "false_folds": 18,
+        "ffr": 0.5294117647058824,
+        "avg_threat_at_fold": 0.0,
+        "avg_last_p0_threat_delta_for_defender": 0.0,
+        "positive_delta_rate": null
+      }
+    }
+  },
+  "deceive_counterfactual": {
+    "candidate_decisions_logged": 148,
+    "candidate_disguise_equals_exploit": 11,
+    "candidate_overlap_rate": 0.07432432432432433,
+    "accepted_deceive_logged": 32,
+    "accepted_disguise_equals_exploit": 0,
+    "accepted_overlap_rate": 0.0,
+    "note": "candidate_* includes rejected threat-gate candidates; accepted_* is the actual executed deceive action overlap. High accepted overlap means the disguise is a no-op at the action level. Requires --mask-log-counterfactual."
+  },
+  "Gate1_pairwise": {
+    "base": "llm_reactive_z",
+    "target": "llm_mask",
+    "paired_seeds": 0,
+    "note": "No paired seeds available."
+  },
+  "ffr_definition": "FFR_proxy = neural turn-phase false folds / opportunities. Opportunity = neural opponent hand shanten<=ffr_hand_shanten and P0 shanten>danger_threshold; false fold = neural action differs from min-shanten push and is more conservative or loses progress. This is a behavior proxy because the neural opponent has no explicit threat threshold.",
+  "limitations": [
+    "If backend=heuristic_fallback, numbers are pipeline checks rather than trained LLM conclusions.",
+    "E1 label is coarse true P0 tenpai; final paper needs opponent-view posterior oracle.",
+    "Against --opponent-style neural, FFR is a proxy behavioral metric, not the original responsive-defender threat-threshold FFR."
+  ]
+}

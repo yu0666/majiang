@@ -1,0 +1,32 @@
+{
+  "inputs": [
+    "Candidate_oracle_v1_go_nogo/candidate_oracle_states.jsonl"
+  ],
+  "states_seen": 18,
+  "examples": 1,
+  "acceptance_rate": 0.05555555555555555,
+  "outcomes": {
+    "ambiguous_interval": 17,
+    "accepted_improvement": 1
+  },
+  "label_types": {
+    "improvement": 1
+  },
+  "modes": {
+    "safe": 1
+  },
+  "utility": {
+    "return_clip": 80.0,
+    "hu_bonus": 20.0,
+    "dealin_penalty": 20.0
+  },
+  "filter": {
+    "confidence": 0.95,
+    "min_rollouts": 32,
+    "min_mean_advantage": 5.0,
+    "min_ci_lower": 0.0,
+    "min_anchor_advantage": 2.0
+  },
+  "output": "Reranker_sft_data/reranker_sft_high_confidence.jsonl",
+  "audit": "Reranker_sft_data/reranker_sft_high_confidence_audit.jsonl"
+}

@@ -1,0 +1,167 @@
+{
+  "model_path": "models/Qwen-Mahjong-V1-Reranker-SFT100-Merged",
+  "data_file": "Reranker_grpo_data/reranker_grpo_env.jsonl",
+  "examples": 19,
+  "adapters": {
+    "base": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 0.9473684210526315,
+        "raw_legal_rate": 0.9473684210526315,
+        "mean_latency_ms": 412.7772060639568
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 0.9473684210526315,
+          "raw_legal_rate": 0.9473684210526315,
+          "mean_latency_ms": 412.7772060639568
+        }
+      }
+    },
+    "qwen-reranker-grpo-multimode-v2/checkpoint-5": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 0.9473684210526315,
+        "raw_legal_rate": 0.9473684210526315,
+        "mean_latency_ms": 678.3591619153556
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 0.9473684210526315,
+          "raw_legal_rate": 0.9473684210526315,
+          "mean_latency_ms": 678.3591619153556
+        }
+      }
+    },
+    "qwen-reranker-grpo-multimode-v2/checkpoint-10": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 464.5058337206903
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 464.5058337206903
+        }
+      }
+    },
+    "qwen-reranker-grpo-multimode-v2/checkpoint-20": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 468.8461883312189
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 468.8461883312189
+        }
+      }
+    },
+    "qwen-reranker-grpo-multimode-v2/checkpoint-40": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 0.9473684210526315,
+        "raw_legal_rate": 0.9473684210526315,
+        "mean_latency_ms": 471.4363127775294
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 0.9473684210526315,
+          "raw_legal_rate": 0.9473684210526315,
+          "mean_latency_ms": 471.4363127775294
+        }
+      }
+    }
+  }
+}

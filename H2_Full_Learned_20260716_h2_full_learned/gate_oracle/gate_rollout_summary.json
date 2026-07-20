@@ -1,0 +1,11 @@
+{
+  "states": 500,
+  "target_states": 500,
+  "chunk_size": 50,
+  "rollouts_per_mode": 6,
+  "defender_threat_model": "learned",
+  "defender_learned_model_path": "Defender_danger_model/danger_model.pth",
+  "model_path": "models/Qwen-Mahjong-V1-Clean-SFT-20260715_v1_clean-Merged",
+  "adapter_path": "",
+  "output": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Full_Learned_20260716_h2_full_learned/gate_oracle/gate_rollout_states.jsonl"
+}

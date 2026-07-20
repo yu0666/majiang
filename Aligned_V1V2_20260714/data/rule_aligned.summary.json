@@ -1,0 +1,13 @@
+{
+  "teacher": "rule",
+  "games": 1400,
+  "seed": 2026071401,
+  "model_path": null,
+  "output_file": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/Aligned_V1V2_20260714/data/rule_aligned.jsonl",
+  "rows": 28331,
+  "eligible_players": 2447,
+  "clean_player_rate": 0.9991071428571429,
+  "avg_steps": 59.777142857142856,
+  "prompt_schema": "shared_base_action_v1",
+  "shanten_engine": "exact_dfs_v2"
+}

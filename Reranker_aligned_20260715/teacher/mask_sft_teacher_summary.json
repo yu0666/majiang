@@ -1,0 +1,130 @@
+{
+  "task": "MASK-SFT data generation",
+  "teacher": "heuristic_l2_mask",
+  "backend": "heuristic_fallback",
+  "seeds": [
+    2026082101,
+    2026083101,
+    2026084101
+  ],
+  "games_per_seed": 50,
+  "total_games": 150,
+  "output_file": "Reranker_aligned_20260715/teacher/reranker_teacher_action.jsonl",
+  "games_trace": "Reranker_aligned_20260715/teacher/mask_sft_teacher_games.jsonl",
+  "steps_trace": "Reranker_aligned_20260715/teacher/mask_sft_teacher_steps.jsonl",
+  "assistant_format": "reranker",
+  "reranker_completion_format": "action",
+  "reranker_augment_modes": [
+    "exploit",
+    "safe",
+    "deceive"
+  ],
+  "metadata": "minimal",
+  "raw_examples": 1033,
+  "kept_examples": 1033,
+  "filtered_examples": 0,
+  "raw_mode_counts": {
+    "exploit": 641,
+    "safe": 276,
+    "deceive": 116
+  },
+  "kept_mode_counts": {
+    "exploit": 641,
+    "safe": 276,
+    "deceive": 116
+  },
+  "filter_reasons": {
+    "kept": 1033
+  },
+  "game_metrics": {
+    "games": 150,
+    "avg_net": 31.333333333333332,
+    "net_distribution": {
+      "median": 10.0,
+      "std": 212.03982854381127,
+      "trimmed_mean_10pct": 14.416666666666666,
+      "p10": -20.0,
+      "p90": 60.0,
+      "min": -190.0,
+      "max": 2540.0
+    },
+    "hu_rate": 0.46,
+    "dealin_rate": 0.15333333333333332,
+    "avg_steps": 59.16,
+    "end_state": {
+      "wall_exhaustion_rate": 0.0,
+      "final_ready_rate_non_hu": 0.0,
+      "hua_zhu_rate_non_hu": 0.0,
+      "avg_final_shanten_non_hu": null
+    },
+    "conditional_net": {
+      "hu": 29.855072463768117,
+      "dealin": 68.69565217391305,
+      "neither_hu_nor_dealin": 18.275862068965516
+    },
+    "action_efficiency": {
+      "avg_shanten_regret": 0.0,
+      "positive_shanten_regret_rate": 0.0,
+      "safe_overrides": 0
+    },
+    "DIR": 0.0,
+    "DIR_counts": {
+      "induced_dealin": 0,
+      "deceive_windows": 5
+    },
+    "FFR": 0.22800718132854578,
+    "FFR_counts": {
+      "false_folds": 127,
+      "false_fold_opportunities": 557,
+      "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+    },
+    "decision_latency_ms": {
+      "p50": 48.60392305999994,
+      "p95": 121.5891819447279,
+      "p99": 167.56839188747108
+    },
+    "mode_counts": {
+      "exploit": 2000,
+      "safe": 78,
+      "deceive": 5
+    },
+    "candidate_reranker": {
+      "enabled_states": 0,
+      "used_states": 0,
+      "changed_actions": 0,
+      "parsed_outputs": 0,
+      "use_rate": 0.0,
+      "change_rate_when_used": 0.0,
+      "parse_rate_when_used": 0.0
+    }
+  },
+  "defender_cfg": {
+    "threat_threshold": 0.7,
+    "oracle_samples": 30,
+    "beta": 2.0,
+    "danger_threshold": 1,
+    "ffr_hand_shanten": 1,
+    "threat_model": "blend",
+    "tell_weight": 0.3,
+    "tell_window": 6,
+    "learned_model_path": "Defender_danger_model/danger_model.pth"
+  },
+  "mask_teacher_cfg": {
+    "mask_oracle_samples": 30,
+    "mask_oracle_beta": 2.0,
+    "mask_danger_threshold": 1,
+    "mask_dir_ready_threshold": 0,
+    "mask_forced_deceive": "off",
+    "mask_deceive_style": "threat",
+    "mask_threat_gate_mode": "cross",
+    "mask_threat_max_shanten_regret": 0,
+    "mask_threat_min_ukeire_ratio": 1.0,
+    "mask_threat_response_model": "blend",
+    "mask_threat_response_tell_weight": 0.3,
+    "mask_threat_min_delta": 0.03,
+    "mask_threat_require_real_target": true,
+    "mask_threat_target_signal": "mc",
+    "mask_threat_target_prob_threshold": 0.78,
+    "mask_log_counterfactual": true
+  }
+}

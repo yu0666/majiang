@@ -1,0 +1,25 @@
+{
+  "input": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Gate_Route_20260715_h2_gate_v1clean/gate_oracle/gate_rollout_states.jsonl",
+  "rows": 429,
+  "labels": {
+    "deceive": 175,
+    "exploit": 151,
+    "safe": 103
+  },
+  "skipped": {
+    "low_reward_range": 71
+  },
+  "reward": {
+    "return_clip": 0.0,
+    "hu_bonus": 5.0,
+    "fan_bonus": 3.0,
+    "dealin_penalty": 20.0,
+    "tail_alpha": 0.2,
+    "tail_risk_weight": 0.5,
+    "catastrophic_loss_threshold": 200.0,
+    "catastrophic_loss_penalty": 40.0,
+    "reward_scale": 20.0
+  },
+  "sft_output": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Gate_Route_20260715_h2_gate_v1clean/gate_data/gate_sft.jsonl",
+  "grpo_output": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Gate_Route_20260715_h2_gate_v1clean/gate_data/gate_grpo.jsonl"
+}

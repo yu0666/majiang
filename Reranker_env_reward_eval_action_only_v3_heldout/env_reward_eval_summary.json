@@ -1,0 +1,199 @@
+{
+  "model_path": "models/Qwen-Mahjong-V1-Reranker-SFT100-Merged",
+  "data_file": "Reranker_grpo_data/reranker_grpo_env_heldout_action_only.jsonl",
+  "examples": 19,
+  "adapters": {
+    "base": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 71.60769361316373
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 71.60769361316373
+        }
+      }
+    },
+    "qwen-reranker-grpo-action-only-v3/checkpoint-10": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 108.3765959514207
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 108.3765959514207
+        }
+      }
+    },
+    "qwen-reranker-grpo-action-only-v3/checkpoint-20": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 105.2374744322151
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 105.2374744322151
+        }
+      }
+    },
+    "qwen-reranker-grpo-action-only-v3/checkpoint-40": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 104.03886884695997
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 104.03886884695997
+        }
+      }
+    },
+    "qwen-reranker-grpo-action-only-v3/checkpoint-60": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 104.12990642515452
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 104.12990642515452
+        }
+      }
+    },
+    "qwen-reranker-grpo-action-only-v3/checkpoint-80": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.6217105263157894,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": 0.0,
+        "positive_gain_rate": 0,
+        "negative_gain_rate": 0,
+        "best_action_rate": 0.2631578947368421,
+        "mean_regret": 0.7368421052631579,
+        "changed_reference_rate": 0,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 106.42739348603706
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.6217105263157894,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0.2631578947368421,
+          "mean_regret": 0.7368421052631579,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 106.42739348603706
+        }
+      }
+    }
+  }
+}

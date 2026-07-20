@@ -1,0 +1,31 @@
+{
+  "input": "Reranker_grpo_oracle_multimode_v2/candidate_oracle_states.jsonl",
+  "output": "Reranker_grpo_data/reranker_grpo_env_multimode_v2.jsonl",
+  "rows": 213,
+  "outcomes": {
+    "kept": 53,
+    "low_reward_range": 3
+  },
+  "modes": {
+    "exploit": 124,
+    "deceive": 42,
+    "safe": 47
+  },
+  "permutations_per_state": 6,
+  "reference_is_best_rate": 0.38028169014084506,
+  "best_action_position": {
+    "1": 58,
+    "2": 55,
+    "3": 34,
+    "4": 24,
+    "5": 21,
+    "6": 21
+  },
+  "utility": {
+    "return_clip": 80.0,
+    "hu_bonus": 20.0,
+    "dealin_penalty": 20.0,
+    "reward_scale": 20.0,
+    "min_reward_range": 5.0
+  }
+}

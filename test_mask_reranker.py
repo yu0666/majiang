@@ -494,6 +494,119 @@ class MASKRerankerTest(unittest.TestCase):
         self.assertEqual(action, "h")
         self.assertIsNone(agent.last_decision["fan_now"])
 
+    def test_continuous_v6_gate_returns_a_legal_action(self):
+        agent = MASKLLMAgent(player_id=0, gate_policy="continuous_v6", mc_oracle_samples=4)
+        legal = get_legal_actions(self.game, 0)
+        action = agent.decide(self.game, legal)
+        self.assertIn(action, legal)
+        self.assertIn(agent.last_decision["mode"], {"exploit", "safe", "deceive"})
+        self.assertTrue(agent.last_decision["belief_shaping"])
+        self.assertTrue(agent.last_decision["fan_shaping"])
+        self.assertTrue(agent.last_decision["early_hu_penalty"])
+        self.assertTrue(agent.last_decision["early_hu_expected_value"])
+        self.assertTrue(agent.last_decision["early_hu_tightened"])
+
+    def test_continuous_v5_has_belief_shaping_off(self):
+        # Byte-identical-behavior guarantee: v5's already-reported real-eval
+        # results must stay reproducible, so v5 must never take the
+        # belief_shaping branch even though it shares every other flag with v6.
+        agent = MASKLLMAgent(player_id=0, gate_policy="continuous_v5", mc_oracle_samples=4)
+        agent.decide(self.game, get_legal_actions(self.game, 0))
+        self.assertFalse(agent.last_decision["belief_shaping"])
+        self.assertEqual(agent.last_decision["avg_belief_conf"], 0.0)
+
+    def test_continuous_v6_belief_conf_swaps_d_term_and_f_term_dominance(self):
+        # avg_belief_conf is the real B_phi value (mean tenpai_confidence
+        # opponents currently assign me) -- d_term (DIR-shaped: silently
+        # reaching tenpai while underrated) should dominate when opponents
+        # are in the dark, and f_term (FFR-shaped: bluffing while already
+        # suspected but not actually close) should instead scale up with
+        # avg_belief_conf. Mock _mc_beliefs (not risk_gate.compute) since
+        # avg_belief_conf is read directly from `beliefs`, not from `gate`.
+        low_game = copy.deepcopy(self.game)
+        high_game = copy.deepcopy(self.game)
+
+        low_agent = MASKLLMAgent(player_id=0, gate_policy="continuous_v6", mc_oracle_samples=4)
+        low_agent._mc_beliefs = lambda game: {
+            f"P{j}": {"think_i_am_tenpai": "no", "tenpai_confidence": 0.0, "source": "mc_posterior"}
+            for j in range(4) if j != 0
+        }
+        low_agent.decide(low_game, get_legal_actions(low_game, 0))
+        self.assertEqual(low_agent.last_decision["avg_belief_conf"], 0.0)
+
+        high_agent = MASKLLMAgent(player_id=0, gate_policy="continuous_v6", mc_oracle_samples=4)
+        high_agent._mc_beliefs = lambda game: {
+            f"P{j}": {"think_i_am_tenpai": "yes", "tenpai_confidence": 1.0, "source": "mc_posterior"}
+            for j in range(4) if j != 0
+        }
+        high_agent.decide(high_game, get_legal_actions(high_game, 0))
+        self.assertEqual(high_agent.last_decision["avg_belief_conf"], 1.0)
+
+        # d_term is scaled by (1 - avg_belief_conf): must vanish once
+        # opponents are already certain, regardless of tenpai status.
+        self.assertEqual(high_agent.last_decision["d_term"], 0.0)
+        # f_term is scaled by avg_belief_conf directly: must vanish when
+        # opponents are fully in the dark.
+        self.assertEqual(low_agent.last_decision["f_term"], 0.0)
+
+    def test_opponent_drift_state_cusum_flags_a_sustained_style_change(self):
+        # Pure-mechanics test, no MASKLLMAgent/game needed: feed one opponent
+        # a stable "conservative" run (mostly terminal discards, no calls)
+        # long enough to set the CUSUM reference, then switch to a sustained
+        # "aggressive" run (lots of peng/mid discards). The naive single-step
+        # drift_score can miss slow drift by construction; cusum_score must
+        # accumulate evidence across the sustained shift and eventually flag.
+        from mask_llm import OpponentDriftState
+
+        state = OpponentDriftState(player_id=1, window_size=24)
+
+        def discard(num, suit):
+            state.append_public_action({"pid": 1, "act": "discard", "tile": f"{num}{suit}"})
+
+        for _ in range(10):
+            discard(1, "万")
+        self.assertFalse(state.cusum_flag)
+        baseline_cusum = state.cusum_score
+
+        for _ in range(20):
+            state.append_public_action({"pid": 1, "act": "peng", "tile": ""})
+            discard(5, "条")
+
+        self.assertTrue(state.cusum_flag)
+        self.assertGreaterEqual(state.cusum_score, baseline_cusum)
+
+    def test_opponent_drift_state_entropy_uncertainty_range(self):
+        from mask_llm import OpponentDriftState
+
+        uniform = OpponentDriftState(player_id=1, window_size=24)
+        for _ in range(20):
+            uniform.append_public_action({"pid": 1, "act": "discard", "tile": "1万"})
+        self.assertEqual(uniform.entropy_uncertainty, 0.0)
+
+        mixed = OpponentDriftState(player_id=1, window_size=24)
+        acts = ["discard", "peng", "gang", "hu", "pass"]
+        for i in range(20):
+            mixed.append_public_action({"pid": 1, "act": acts[i % len(acts)], "tile": "1万"})
+        self.assertGreater(mixed.entropy_uncertainty, 0.9)
+
+    def test_continuous_v7_gate_returns_a_legal_action_with_cusum_wired(self):
+        agent = MASKLLMAgent(player_id=0, gate_policy="continuous_v7", mc_oracle_samples=4)
+        legal = get_legal_actions(self.game, 0)
+        action = agent.decide(self.game, legal)
+        self.assertIn(action, legal)
+        # v7 inherits every v6 flag (additive-versioning convention).
+        self.assertTrue(agent.last_decision["belief_shaping"])
+        self.assertIn("z_cusum_flags", agent.last_decision["gate"])
+
+    def test_continuous_v6_gate_has_no_cusum_uncertainty_blend(self):
+        # Byte-identical-behavior guarantee: v6's gate/uncertainty math must
+        # stay exactly what it was before v7 existed. use_cusum_uncertainty
+        # defaults to False, so RiskGate.compute's uncertainty formula is
+        # untouched for v6 (and v1-v5); only z_cusum_flags is a new, unread key.
+        agent = MASKLLMAgent(player_id=0, gate_policy="continuous_v6", mc_oracle_samples=4)
+        agent.decide(self.game, get_legal_actions(self.game, 0))
+        self.assertIn("z_cusum_flags", agent.last_decision["gate"])
+
     def test_deceive_candidates_are_reranked(self):
         llm = LastCandidateLLM()
         agent = MASKLLMAgent(

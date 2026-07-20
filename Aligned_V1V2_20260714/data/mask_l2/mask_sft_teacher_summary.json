@@ -1,0 +1,125 @@
+{
+  "task": "MASK-SFT data generation",
+  "teacher": "heuristic_l2_mask",
+  "backend": "heuristic_fallback",
+  "seeds": [
+    2026071401,
+    2026072401,
+    2026073401
+  ],
+  "games_per_seed": 200,
+  "total_games": 600,
+  "output_file": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/Aligned_V1V2_20260714/data/mask_l2/mask_l2_aligned.jsonl",
+  "games_trace": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/Aligned_V1V2_20260714/data/mask_l2/mask_sft_teacher_games.jsonl",
+  "steps_trace": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/Aligned_V1V2_20260714/data/mask_l2/mask_sft_teacher_steps.jsonl",
+  "assistant_format": "json",
+  "reranker_augment_modes": null,
+  "metadata": "minimal",
+  "raw_examples": 7857,
+  "kept_examples": 7857,
+  "filtered_examples": 0,
+  "raw_mode_counts": {
+    "exploit": 7499,
+    "safe": 343,
+    "deceive": 15
+  },
+  "kept_mode_counts": {
+    "exploit": 7499,
+    "safe": 343,
+    "deceive": 15
+  },
+  "filter_reasons": {
+    "kept": 7857
+  },
+  "game_metrics": {
+    "games": 600,
+    "avg_net": 18.516666666666666,
+    "net_distribution": {
+      "median": 10.0,
+      "std": 134.88501172809754,
+      "trimmed_mean_10pct": 8.125,
+      "p10": -40.0,
+      "p90": 60.0,
+      "min": -360.0,
+      "max": 2560.0
+    },
+    "hu_rate": 0.505,
+    "dealin_rate": 0.16666666666666666,
+    "avg_steps": 59.095,
+    "end_state": {
+      "wall_exhaustion_rate": 0.0,
+      "final_ready_rate_non_hu": 0.0,
+      "hua_zhu_rate_non_hu": 0.0,
+      "avg_final_shanten_non_hu": null
+    },
+    "conditional_net": {
+      "hu": 39.10891089108911,
+      "dealin": -40.6,
+      "neither_hu_nor_dealin": 16.85279187817259
+    },
+    "action_efficiency": {
+      "avg_shanten_regret": 0.0,
+      "positive_shanten_regret_rate": 0.0,
+      "safe_overrides": 0
+    },
+    "DIR": 0.0,
+    "DIR_counts": {
+      "induced_dealin": 0,
+      "deceive_windows": 15
+    },
+    "FFR": 0.2192613370733988,
+    "FFR_counts": {
+      "false_folds": 469,
+      "false_fold_opportunities": 2139,
+      "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+    },
+    "decision_latency_ms": {
+      "p50": 50.49616610631347,
+      "p95": 124.17983007617295,
+      "p99": 170.2216488774866
+    },
+    "mode_counts": {
+      "exploit": 7499,
+      "safe": 343,
+      "deceive": 15
+    },
+    "candidate_reranker": {
+      "enabled_states": 0,
+      "used_states": 0,
+      "changed_actions": 0,
+      "parsed_outputs": 0,
+      "use_rate": 0.0,
+      "change_rate_when_used": 0.0,
+      "parse_rate_when_used": 0.0
+    }
+  },
+  "defender_cfg": {
+    "threat_threshold": 0.7,
+    "oracle_samples": 30,
+    "beta": 2.0,
+    "danger_threshold": 1,
+    "ffr_hand_shanten": 1,
+    "threat_model": "blend",
+    "tell_weight": 0.3,
+    "tell_window": 6,
+    "learned_model_path": "Defender_danger_model/danger_model.pth"
+  },
+  "mask_teacher_cfg": {
+    "mask_oracle_samples": 30,
+    "mask_oracle_beta": 2.0,
+    "mask_danger_threshold": 1,
+    "mask_dir_ready_threshold": 0,
+    "mask_forced_deceive": "off",
+    "mask_deceive_style": "threat",
+    "mask_threat_gate_mode": "cross",
+    "mask_threat_max_shanten_regret": 0,
+    "mask_threat_min_ukeire_ratio": 1.0,
+    "mask_threat_response_model": "blend",
+    "mask_threat_response_tell_weight": 0.3,
+    "mask_threat_min_delta": 0.03,
+    "mask_threat_require_real_target": true,
+    "mask_threat_target_signal": "mc",
+    "mask_threat_target_prob_threshold": 0.78,
+    "mask_log_counterfactual": true
+  }
+}

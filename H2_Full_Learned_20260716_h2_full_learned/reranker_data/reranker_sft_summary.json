@@ -1,0 +1,42 @@
+{
+  "inputs": [
+    "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Full_Learned_20260716_h2_full_learned/reranker_oracle/candidate_oracle_states.jsonl"
+  ],
+  "states_seen": 660,
+  "examples": 295,
+  "acceptance_rate": 0.44696969696969696,
+  "outcomes": {
+    "accepted_anchor": 102,
+    "accepted_improvement": 193,
+    "ambiguous_interval": 365
+  },
+  "label_types": {
+    "anchor": 102,
+    "improvement": 193
+  },
+  "modes": {
+    "exploit": 122,
+    "safe": 82,
+    "deceive": 91
+  },
+  "utility": {
+    "return_clip": 0.0,
+    "hu_bonus": 5.0,
+    "fan_bonus": 3.0,
+    "dealin_penalty": 20.0,
+    "tail_alpha": 0.2,
+    "tail_risk_weight": 0.5,
+    "catastrophic_loss_threshold": 200.0,
+    "catastrophic_loss_penalty": 40.0
+  },
+  "filter": {
+    "confidence": 0.8,
+    "min_rollouts": 12,
+    "min_mean_advantage": 2.0,
+    "min_ci_lower": -5.0,
+    "min_anchor_advantage": 1.0
+  },
+  "output": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Full_Learned_20260716_h2_full_learned/reranker_data/reranker_sft.jsonl",
+  "audit": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Full_Learned_20260716_h2_full_learned/reranker_data/reranker_sft_audit.jsonl",
+  "completion_format": "json"
+}

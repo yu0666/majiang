@@ -1,0 +1,40 @@
+{
+  "model_path": "models/Qwen-Mahjong-V1-Reranker-SFT100-Merged",
+  "data_file": "Reranker_grpo_data/reranker_grpo_env_heldout_v4_no_reference.jsonl",
+  "examples": 19,
+  "candidate_scoring": true,
+  "adapters": {
+    "base": {
+      "overall": {
+        "examples": 19,
+        "mean_selected_reward": 1.268092105263158,
+        "mean_reference_reward": 1.6217105263157894,
+        "mean_gain_over_reference": -0.3536184210526316,
+        "positive_gain_rate": 0.10526315789473684,
+        "negative_gain_rate": 0.42105263157894735,
+        "best_action_rate": 0.05263157894736842,
+        "mean_regret": 1.0904605263157894,
+        "changed_reference_rate": 0.5263157894736842,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 178.11958914573648
+      },
+      "by_mode": {
+        "exploit": {
+          "examples": 19,
+          "mean_selected_reward": 1.268092105263158,
+          "mean_reference_reward": 1.6217105263157894,
+          "mean_gain_over_reference": -0.3536184210526316,
+          "positive_gain_rate": 0.10526315789473684,
+          "negative_gain_rate": 0.42105263157894735,
+          "best_action_rate": 0.05263157894736842,
+          "mean_regret": 1.0904605263157894,
+          "changed_reference_rate": 0.5263157894736842,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 178.11958914573648
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "teacher_inputs": [
+    "Reranker_teacher_l2_public_3seeds_100games/reranker_teacher_l2_public.jsonl",
+    "Reranker_teacher_safe_deceive_public_1seed_100games/reranker_teacher_safe_deceive.jsonl"
+  ],
+  "improvement_input": "Reranker_sft_data/reranker_sft_high_confidence.jsonl",
+  "improvement_repeat": 20,
+  "rows": 3675,
+  "unique_teacher_rows": 3655,
+  "sources": {
+    "l2_rule_teacher": 3655,
+    "rollout_high_confidence": 20
+  },
+  "modes": {
+    "exploit": 2630,
+    "deceive": 249,
+    "safe": 796
+  },
+  "label_types": {
+    "teacher_anchor": 3655,
+    "improvement": 20
+  },
+  "seed": 3407,
+  "output": "Reranker_sft_data/reranker_sft_mixed_public.jsonl"
+}

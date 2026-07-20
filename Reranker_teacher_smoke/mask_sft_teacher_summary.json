@@ -1,0 +1,90 @@
+{
+  "task": "MASK-SFT data generation",
+  "teacher": "heuristic_l2_mask",
+  "backend": "heuristic_fallback",
+  "seeds": [
+    2026071301
+  ],
+  "games_per_seed": 5,
+  "total_games": 5,
+  "output_file": "Reranker_teacher_smoke/reranker_teacher_smoke.jsonl",
+  "games_trace": "Reranker_teacher_smoke/mask_sft_teacher_games.jsonl",
+  "steps_trace": "Reranker_teacher_smoke/mask_sft_teacher_steps.jsonl",
+  "assistant_format": "reranker",
+  "metadata": "minimal",
+  "raw_examples": 49,
+  "kept_examples": 49,
+  "filtered_examples": 0,
+  "raw_mode_counts": {
+    "exploit": 48,
+    "deceive": 1
+  },
+  "kept_mode_counts": {
+    "exploit": 48,
+    "deceive": 1
+  },
+  "filter_reasons": {
+    "kept": 49
+  },
+  "game_metrics": {
+    "games": 5,
+    "avg_net": 8.0,
+    "hu_rate": 0.2,
+    "dealin_rate": 0.4,
+    "avg_steps": 58.6,
+    "DIR": 0.0,
+    "DIR_counts": {
+      "induced_dealin": 0,
+      "deceive_windows": 1
+    },
+    "FFR": 0.6052631578947368,
+    "FFR_counts": {
+      "false_folds": 23,
+      "false_fold_opportunities": 38,
+      "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+    },
+    "decision_latency_ms": {
+      "p50": 23.733678041025996,
+      "p95": 37.82836301252246,
+      "p99": 48.29488089308143
+    },
+    "mode_counts": {
+      "exploit": 71,
+      "deceive": 1
+    },
+    "candidate_reranker": {
+      "enabled_states": 0,
+      "used_states": 0,
+      "changed_actions": 0,
+      "parsed_outputs": 0,
+      "use_rate": 0.0,
+      "change_rate_when_used": 0.0,
+      "parse_rate_when_used": 0.0
+    }
+  },
+  "defender_cfg": {
+    "threat_threshold": 0.4,
+    "oracle_samples": 30,
+    "beta": 2.0,
+    "danger_threshold": 1,
+    "ffr_hand_shanten": 1,
+    "threat_model": "blend",
+    "tell_weight": 0.3,
+    "tell_window": 6,
+    "learned_model_path": "Defender_danger_model/danger_model.pth"
+  },
+  "mask_teacher_cfg": {
+    "mask_oracle_samples": 30,
+    "mask_oracle_beta": 2.0,
+    "mask_danger_threshold": 1,
+    "mask_dir_ready_threshold": 0,
+    "mask_forced_deceive": "eligible",
+    "mask_deceive_style": "threat",
+    "mask_threat_gate_mode": "delta_only",
+    "mask_threat_min_delta": 0.03,
+    "mask_threat_require_real_target": true,
+    "mask_threat_target_signal": "mc",
+    "mask_threat_target_prob_threshold": 0.78,
+    "mask_log_counterfactual": true
+  }
+}

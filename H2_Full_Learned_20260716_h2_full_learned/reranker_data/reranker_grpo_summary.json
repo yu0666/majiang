@@ -1,0 +1,38 @@
+{
+  "input": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Full_Learned_20260716_h2_full_learned/reranker_oracle/candidate_oracle_states.jsonl",
+  "output": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/H2_Full_Learned_20260716_h2_full_learned/reranker_data/reranker_grpo.jsonl",
+  "rows": 1036,
+  "outcomes": {
+    "kept": 461,
+    "low_reward_range": 199
+  },
+  "modes": {
+    "exploit": 445,
+    "safe": 291,
+    "deceive": 300
+  },
+  "permutations_per_state": 3,
+  "completion_format": "action_only",
+  "reference_in_prompt": false,
+  "reference_is_best_rate": 0.41505791505791506,
+  "best_action_position": {
+    "1": 465,
+    "2": 455,
+    "3": 96,
+    "4": 15,
+    "5": 3,
+    "6": 2
+  },
+  "utility": {
+    "return_clip": 0.0,
+    "hu_bonus": 5.0,
+    "fan_bonus": 3.0,
+    "dealin_penalty": 20.0,
+    "tail_alpha": 0.2,
+    "tail_risk_weight": 0.5,
+    "catastrophic_loss_threshold": 200.0,
+    "catastrophic_loss_penalty": 40.0,
+    "reward_scale": 20.0,
+    "min_reward_range": 2.0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "states": 30,
+  "mode_evaluations": {
+    "exploit": 30,
+    "safe": 30,
+    "deceive": 28
+  },
+  "model_path": "models/Qwen-Mahjong-V1-Clean-SFT-20260715_v1_clean-Merged",
+  "adapter_path": "",
+  "rollouts_per_mode": 4,
+  "output": "H2_Gate_Route_20260715_h2_gate_v1clean_smoke/gate_oracle/gate_rollout_states.jsonl"
+}

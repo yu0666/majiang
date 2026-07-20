@@ -1,0 +1,33 @@
+{
+  "input": "H2_Full_Learned_20260716_h2_full_learned/gate_oracle/gate_rollout_states.jsonl",
+  "source_rows": 500,
+  "sft_rows_after_oversampling": 1360,
+  "grpo_rows_after_oversampling": 1360,
+  "raw_labels_before_oversampling": {
+    "exploit": 261,
+    "deceive": 207,
+    "safe": 32
+  },
+  "skipped": {},
+  "value_gate_config": {
+    "intervention_margin": 1.0,
+    "deceive_margin": 0.5,
+    "deceive_tie_margin": 5.0,
+    "deceive_oversample": 5,
+    "safe_oversample": 2,
+    "reward_scale": 20.0,
+    "min_grpo_range": 0.5
+  },
+  "reward": {
+    "return_clip": 0.0,
+    "hu_bonus": 8.0,
+    "fan_bonus": 4.0,
+    "dealin_penalty": 25.0,
+    "tail_alpha": 0.2,
+    "tail_risk_weight": 0.7,
+    "catastrophic_loss_threshold": 200.0,
+    "catastrophic_loss_penalty": 50.0
+  },
+  "sft_output": "H2_Value_Gate_20260716/gate_value_data/gate_sft.jsonl",
+  "grpo_output": "H2_Value_Gate_20260716/gate_value_data/gate_grpo.jsonl"
+}

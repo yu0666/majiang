@@ -1,0 +1,201 @@
+{
+  "created_for": "Gate1 minimal H1/H2 pipeline",
+  "backend": "local_qwen",
+  "model_path": "models/Qwen-Mahjong-V1-Mixed-SFT-Merged",
+  "adapter_path": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/qwen-v2-grpo-diverse-v1-l2/checkpoint-100",
+  "belief_adapter_path": null,
+  "opponent_style": "responsive",
+  "methods": [
+    "llm_base",
+    "llm_reactive_z",
+    "llm_mask"
+  ],
+  "games_per_method": 100,
+  "defender_cfg": {
+    "threat_threshold": 0.4,
+    "oracle_samples": 30,
+    "beta": 2.0,
+    "danger_threshold": 1,
+    "ffr_hand_shanten": 1,
+    "threat_model": "blend",
+    "tell_weight": 0.3,
+    "tell_window": 6,
+    "learned_model_path": "Defender_danger_model/danger_model.pth"
+  },
+  "mask_cfg": {
+    "oracle_samples": 30,
+    "beta": 2.0,
+    "danger_threshold": 1,
+    "dir_ready_threshold": 0,
+    "deceive_threat_ceiling": 0.5,
+    "forced_deceive": "eligible",
+    "deceive_style": "threat",
+    "threat_allow_break_ready": false,
+    "threat_max_result_shanten": 0,
+    "threat_gate_threshold": 0.4,
+    "threat_gate_margin": 0.12,
+    "threat_min_delta": 0.03,
+    "threat_gate_mode": "delta_only",
+    "threat_tell_window": 6,
+    "threat_max_start_shanten": 3,
+    "threat_require_non_exploit": true,
+    "threat_require_real_target": true,
+    "threat_target_max_shanten": 1,
+    "threat_target_signal": "mc",
+    "threat_target_prob_threshold": 0.78,
+    "log_counterfactual": true,
+    "snapshot_samples": 120,
+    "snapshot_crn_seeds": 1
+  },
+  "E1_belief": {
+    "samples": 0,
+    "note": "No belief samples were collected."
+  },
+  "E2_ladder": {
+    "llm_base": {
+      "games": 100,
+      "avg_net": 32.5,
+      "hu_rate": 0.31,
+      "dealin_rate": 0.18,
+      "avg_steps": 61.48,
+      "DIR": 0.0,
+      "DIR_counts": {
+        "induced_dealin": 0,
+        "deceive_windows": 0
+      },
+      "FFR": 0.22235872235872237,
+      "FFR_counts": {
+        "false_folds": 181,
+        "false_fold_opportunities": 814,
+        "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+      },
+      "decision_latency_ms": {
+        "p50": 100.81611690111458,
+        "p95": 108.02497994154692,
+        "p99": 117.24772187881172
+      },
+      "mode_counts": {
+        "exploit": 1517
+      }
+    },
+    "llm_mask": {
+      "games": 100,
+      "avg_net": 5.3,
+      "hu_rate": 0.09,
+      "dealin_rate": 0.07,
+      "avg_steps": 58.02,
+      "DIR": 0.0,
+      "DIR_counts": {
+        "induced_dealin": 0,
+        "deceive_windows": 77
+      },
+      "FFR": 0.5077399380804953,
+      "FFR_counts": {
+        "false_folds": 492,
+        "false_fold_opportunities": 969,
+        "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+      },
+      "decision_latency_ms": {
+        "p50": 572.3889709915966,
+        "p95": 772.3405109718442,
+        "p99": 851.1532959528267
+      },
+      "mode_counts": {
+        "exploit": 1373,
+        "deceive": 77,
+        "safe": 8
+      }
+    },
+    "llm_reactive_z": {
+      "games": 100,
+      "avg_net": -47.8,
+      "hu_rate": 0.29,
+      "dealin_rate": 0.17,
+      "avg_steps": 61.64,
+      "DIR": 0.0,
+      "DIR_counts": {
+        "induced_dealin": 0,
+        "deceive_windows": 0
+      },
+      "FFR": 0.22522522522522523,
+      "FFR_counts": {
+        "false_folds": 175,
+        "false_fold_opportunities": 777,
+        "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+      },
+      "decision_latency_ms": {
+        "p50": 167.63064311817288,
+        "p95": 182.65878083184361,
+        "p99": 189.2695790156722
+      },
+      "mode_counts": {
+        "exploit": 1035,
+        "safe": 518
+      }
+    }
+  },
+  "FFR_attribution": {
+    "ffr_opportunity_events": 2560,
+    "false_fold_events": 848,
+    "ffr": 0.33125,
+    "opportunities_in_deceive_window": 76,
+    "false_folds_in_deceive_window": 28,
+    "by_last_p0_mode": {
+      "deceive": {
+        "opportunities": 73,
+        "false_folds": 27,
+        "ffr": 0.3698630136986301,
+        "avg_threat_at_fold": 0.5261,
+        "avg_last_p0_threat_delta_for_defender": 0.0107,
+        "positive_delta_rate": 0.6164383561643836
+      },
+      "exploit": {
+        "opportunities": 2235,
+        "false_folds": 753,
+        "ffr": 0.33691275167785234,
+        "avg_threat_at_fold": 0.4005,
+        "avg_last_p0_threat_delta_for_defender": 0.0015,
+        "positive_delta_rate": 0.4375838926174497
+      },
+      "safe": {
+        "opportunities": 252,
+        "false_folds": 68,
+        "ffr": 0.2698412698412698,
+        "avg_threat_at_fold": 0.3062,
+        "avg_last_p0_threat_delta_for_defender": 0.0063,
+        "positive_delta_rate": 0.5357142857142857
+      }
+    }
+  },
+  "deceive_counterfactual": {
+    "candidate_decisions_logged": 118,
+    "candidate_disguise_equals_exploit": 41,
+    "candidate_overlap_rate": 0.3474576271186441,
+    "accepted_deceive_logged": 77,
+    "accepted_disguise_equals_exploit": 0,
+    "accepted_overlap_rate": 0.0,
+    "note": "candidate_* includes rejected threat-gate candidates; accepted_* is the actual executed deceive action overlap. High accepted overlap means the disguise is a no-op at the action level. Requires --mask-log-counterfactual."
+  },
+  "Gate1_pairwise": {
+    "base": "llm_reactive_z",
+    "target": "llm_mask",
+    "paired_seeds": 100,
+    "avg_delta_net": 53.1,
+    "avg_delta_dealin_rate": -0.1,
+    "avg_delta_hu_rate": -0.2,
+    "avg_delta_steps": -3.62,
+    "net_positive_rate": 0.39,
+    "net_sign_test_p": 1.0,
+    "gate1_direction": {
+      "score_improved": true,
+      "dealin_not_worse": true,
+      "interpretation": "Use only as smoke-test direction unless backend is a trained/local LLM and games are large enough."
+    }
+  },
+  "ffr_definition": "FFR = turn-phase false folds / opportunities. Opportunity = a responsive opponent had a real hand (shanten<=ffr_hand_shanten) AND P0 was not actually dangerous (oracle); false fold = it nonetheless played safe because its public threat estimate of P0 was high. Only meaningful with --opponent-style responsive.",
+  "limitations": [
+    "If backend=heuristic_fallback, numbers are pipeline checks rather than trained LLM conclusions.",
+    "E1 label is coarse true P0 tenpai; final paper needs opponent-view posterior oracle.",
+    "FFR/DIR are only nonzero against belief-responsive opponents (--opponent-style responsive); the default rule bots (greedy/aggressive/...) do not fold on perceived threat."
+  ]
+}

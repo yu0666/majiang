@@ -1,0 +1,13 @@
+{
+  "teacher": "local_qwen",
+  "games": 1000,
+  "seed": 2026071501,
+  "model_path": "models/Qwen-Mahjong-V1-Mixed-SFT-Merged",
+  "output_file": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/Aligned_V1V2_20260714/data/selfplay_aligned.jsonl",
+  "rows": 13976,
+  "eligible_players": 1019,
+  "clean_player_rate": 0.9995,
+  "avg_steps": 64.36,
+  "prompt_schema": "shared_base_action_v1",
+  "shanten_engine": "exact_dfs_v2"
+}

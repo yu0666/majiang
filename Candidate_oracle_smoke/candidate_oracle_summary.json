@@ -1,0 +1,77 @@
+{
+  "config": {
+    "backend": "heuristic_fallback",
+    "model_path": null,
+    "adapter_path": null,
+    "opponent_style": "responsive",
+    "defender": {
+      "threat_threshold": 0.4,
+      "oracle_samples": 4,
+      "beta": 2.0,
+      "danger_threshold": 1,
+      "ffr_hand_shanten": 1,
+      "threat_model": "blend",
+      "tell_weight": 0.3,
+      "tell_window": 6,
+      "learned_model_path": "Defender_danger_model/danger_model.pth"
+    },
+    "quotas": {
+      "exploit": 2,
+      "safe": 0,
+      "deceive": 1
+    },
+    "rollouts_per_action": 2,
+    "max_candidates": 3,
+    "continuation": "heuristic",
+    "seed": 20260713,
+    "rollout_seed": 731000
+  },
+  "completed_quotas": {
+    "exploit": 2,
+    "deceive": 1
+  },
+  "quota_met": true,
+  "metrics": {
+    "evaluated": {
+      "states": 3,
+      "baseline_mean_return": 53.333333333333336,
+      "oracle_mean_return": 53.333333333333336,
+      "mean_oracle_advantage": 0.0,
+      "median_oracle_advantage": 0.0,
+      "positive_advantage_rate": 0.0,
+      "oracle_action_change_rate": 0.0,
+      "mean_candidate_count": 2.3333333333333335
+    },
+    "by_mode": {
+      "deceive": {
+        "states": 1,
+        "baseline_mean_return": 15.0,
+        "oracle_mean_return": 15.0,
+        "mean_oracle_advantage": 0.0,
+        "median_oracle_advantage": 0.0,
+        "positive_advantage_rate": 0.0,
+        "oracle_action_change_rate": 0.0,
+        "mean_candidate_count": 3
+      },
+      "exploit": {
+        "states": 2,
+        "baseline_mean_return": 72.5,
+        "oracle_mean_return": 72.5,
+        "mean_oracle_advantage": 0.0,
+        "median_oracle_advantage": 0.0,
+        "positive_advantage_rate": 0.0,
+        "oracle_action_change_rate": 0.0,
+        "mean_candidate_count": 2
+      }
+    },
+    "considered_states": {
+      "exploit": 65,
+      "safe": 2,
+      "deceive": 2
+    },
+    "skipped_states": {
+      "deceive:fewer_than_two_candidates": 1
+    },
+    "interpretation": "Oracle advantage is an upper bound under the configured continuation policy. A positive gap means the constrained candidate set contains a better action than the deployed selector on the same paired rollout futures."
+  }
+}

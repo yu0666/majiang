@@ -37,6 +37,18 @@ def _clip(value: float, low: float = 0.0, high: float = 1.0) -> float:
     return max(low, min(high, value))
 
 
+# CUSUM change-point constants for OpponentDriftState (continuous_v7's z_j
+# upgrade). _CUSUM_SLACK (k) is the per-step deviation allowance below which
+# evidence does not accumulate (ordinary noise); _CUSUM_THRESHOLD (h) is the
+# cumulative evidence level that flags a confirmed change point. _EMA_LAMBDA
+# smooths the raw per-step feature vector before it feeds the CUSUM statistic,
+# so a single noisy step can't swing the reference comparison on its own.
+_EMA_LAMBDA = 0.4
+_CUSUM_SLACK = 0.05
+_CUSUM_THRESHOLD = 0.6
+_ACTION_TYPES = ("discard", "peng", "gang", "hu", "pass")
+
+
 def _safe_json_loads(text: str) -> Optional[Dict[str, Any]]:
     text = text.strip()
     try:
@@ -84,6 +96,14 @@ class OpponentDriftState:
     last_vector: Dict[str, float] = field(default_factory=dict)
     drift_score: float = 0.0
     drift_flag: bool = False
+    # continuous_v7 additions (opt-in downstream; computed unconditionally
+    # here since they're cheap and additive, but only *consumed* when
+    # RiskGate.compute(..., use_cusum_uncertainty=True) reads them):
+    ema_vector: Dict[str, float] = field(default_factory=dict)
+    reference_vector: Dict[str, float] = field(default_factory=dict)
+    cusum_score: float = 0.0
+    cusum_flag: bool = False
+    entropy_uncertainty: float = 0.0
 
     def append_public_action(self, record: Dict[str, Any]) -> None:
         if record.get("pid") != self.player_id:
@@ -97,13 +117,64 @@ class OpponentDriftState:
             self.last_vector = current
             self.drift_score = 0.0
             self.drift_flag = False
-            return
+        else:
+            keys = set(current) | set(self.last_vector)
+            delta = math.sqrt(sum((current.get(k, 0.0) - self.last_vector.get(k, 0.0)) ** 2 for k in keys))
+            self.drift_score = delta
+            self.drift_flag = delta >= 0.45 and len(self.actions) >= 6
+            self.last_vector = current
+        self.entropy_uncertainty = self._compute_entropy_uncertainty()
+        self._update_cusum(current)
 
-        keys = set(current) | set(self.last_vector)
-        delta = math.sqrt(sum((current.get(k, 0.0) - self.last_vector.get(k, 0.0)) ** 2 for k in keys))
-        self.drift_score = delta
-        self.drift_flag = delta >= 0.45 and len(self.actions) >= 6
-        self.last_vector = current
+    def _update_cusum(self, current: Dict[str, float]) -> None:
+        # EMA-smooth the raw per-step vector first (lambda=0.4): this is the
+        # tracker's actual per-step state, distinct from the naive single-step
+        # `last_vector` diff above.
+        if not self.ema_vector:
+            self.ema_vector = dict(current)
+        else:
+            keys = set(current) | set(self.ema_vector)
+            self.ema_vector = {
+                k: _EMA_LAMBDA * current.get(k, 0.0) + (1.0 - _EMA_LAMBDA) * self.ema_vector.get(k, 0.0)
+                for k in keys
+            }
+
+        if len(self.actions) < 6:
+            # Window still filling: keep sliding the reference so the
+            # "normal" baseline reflects settled early behavior, not the
+            # very first 1-2 actions.
+            self.reference_vector = dict(self.ema_vector)
+            self.cusum_score = 0.0
+            self.cusum_flag = False
+            return
+        if not self.reference_vector:
+            self.reference_vector = dict(self.ema_vector)
+
+        # Classic one-sided CUSUM: accumulate (deviation - slack), floored at
+        # 0, against a *fixed* reference. Unlike drift_score (single-step vs.
+        # last update), this accumulates evidence across many small steps, so
+        # slow drift away from the opponent's early-game baseline still
+        # eventually crosses the threshold.
+        keys = set(self.ema_vector) | set(self.reference_vector)
+        deviation = math.sqrt(
+            sum((self.ema_vector.get(k, 0.0) - self.reference_vector.get(k, 0.0)) ** 2 for k in keys)
+        )
+        self.cusum_score = max(0.0, self.cusum_score + deviation - _CUSUM_SLACK)
+        self.cusum_flag = self.cusum_score >= _CUSUM_THRESHOLD
+
+    def _compute_entropy_uncertainty(self) -> float:
+        # Categorical entropy of the action-type histogram, normalized against
+        # the fixed 5-type alphabet so it's comparable across windows/opponents
+        # (not against however many distinct types happen to appear). High
+        # entropy = spread-out/unpredictable behavior mix; low = concentrated.
+        total = max(1, len(self.actions))
+        counts = Counter(a.get("act", "") for a in self.actions)
+        probs = [counts.get(t, 0) / total for t in _ACTION_TYPES if counts.get(t, 0) > 0]
+        if len(probs) <= 1:
+            return 0.0
+        entropy = -sum(p * math.log(p, 2) for p in probs)
+        max_entropy = math.log(len(_ACTION_TYPES), 2)
+        return _clip(entropy / max_entropy) if max_entropy > 0 else 0.0
 
     def as_vector(self) -> Dict[str, float]:
         total = max(1, len(self.actions))
@@ -157,6 +228,9 @@ class OpponentDriftState:
             "z_public_vector": self.as_vector(),
             "drift_score": round(self.drift_score, 4),
             "drift_flag": self.drift_flag,
+            "cusum_score": round(self.cusum_score, 4),
+            "cusum_flag": self.cusum_flag,
+            "entropy_uncertainty": round(self.entropy_uncertainty, 4),
             "recent_actions": list(self.actions)[-6:],
         }
 
@@ -267,7 +341,14 @@ class LLMBeliefEstimator:
 
 
 class RiskGate:
-    def compute(self, game: MahjongGame, player_id: int, z_state: Dict[int, Dict[str, Any]], beliefs: Dict[str, Any]) -> Dict[str, Any]:
+    def compute(
+        self,
+        game: MahjongGame,
+        player_id: int,
+        z_state: Dict[int, Dict[str, Any]],
+        beliefs: Dict[str, Any],
+        use_cusum_uncertainty: bool = False,
+    ) -> Dict[str, Any]:
         player = game.players[player_id]
         remaining = game.deck.remaining_count()
         start_balance = 10000
@@ -280,6 +361,15 @@ class RiskGate:
                 pass
 
         drift_uncertainty = max((v.get("drift_score", 0.0) for v in z_state.values()), default=0.0)
+        if use_cusum_uncertainty:
+            # continuous_v7: blend in the CUSUM/entropy z_j upgrade instead of
+            # the naive single-step drift alone. cusum_score is normalized by
+            # its own flag threshold so it saturates at 1.0 exactly when a
+            # change point is confirmed, keeping the blend in [0, 1].
+            cusum_raw = max((v.get("cusum_score", 0.0) for v in z_state.values()), default=0.0)
+            cusum_norm = _clip(cusum_raw / _CUSUM_THRESHOLD) if _CUSUM_THRESHOLD else 0.0
+            entropy_term = max((v.get("entropy_uncertainty", 0.0) for v in z_state.values()), default=0.0)
+            drift_uncertainty = _clip(0.5 * drift_uncertainty + 0.35 * cusum_norm + 0.15 * entropy_term)
         visible_threat = sum(1 for p in game.players if p.player_id != player_id and len(p.open_melds) >= 2)
         risk_budget = 0.45 * visible_threat + 0.35 * max_conf + 0.2 * _clip((40 - remaining) / 40.0)
         uncertainty = _clip(drift_uncertainty + (1.0 - max_conf) * 0.4)
@@ -298,6 +388,7 @@ class RiskGate:
             "score_gap": score_gap,
             "tiles_left": remaining,
             "z_drift_flags": {f"P{pid}": info.get("drift_flag", False) for pid, info in z_state.items()},
+            "z_cusum_flags": {f"P{pid}": info.get("cusum_flag", False) for pid, info in z_state.items()},
         }
 
 
@@ -348,7 +439,7 @@ class MASKLLMAgent:
         self.decision_llm = decision_llm if decision_llm is not None else llm
         self.reranker_llm = reranker_llm if reranker_llm is not None else self.decision_llm
         self.gate_llm = gate_llm
-        if gate_policy not in {"rule", "learned", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5"}:
+        if gate_policy not in {"rule", "learned", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"}:
             raise ValueError(f"Unknown gate_policy: {gate_policy}")
         self.gate_policy = gate_policy
         self.belief_estimator = LLMBeliefEstimator(llm=self.belief_llm)
@@ -834,6 +925,7 @@ class MASKLLMAgent:
         early_hu_penalty: bool = False,
         early_hu_expected_value: bool = False,
         early_hu_tightened: bool = False,
+        belief_shaping: bool = False,
     ) -> str:
         """Chapter-5/6 continuous risk-shaping gate: a_i = argmax_a [Q_base(a) + alpha*DeltaShape(a)],
         s.t. Q_base(a) >= Q* - tau_eff, alpha = f(u, rho).
@@ -887,6 +979,20 @@ class MASKLLMAgent:
         Suppression has to zero alpha exactly, not just shrink it, to have
         any effect -- hence value_gate multiplies alpha directly below
         instead of feeding the logit.
+
+        belief_shaping (gate_policy="continuous_v6" only, default off so
+        "continuous".."continuous_v5" stay byte-identical): `beliefs` is
+        already the real B_phi -- decide() calls self._mc_beliefs(game) by
+        default (use_mc_belief=True), the MC public-info oracle documented
+        above (mask_llm.__init__) as "the estimator that passed H1" -- but
+        until now it only ever fed RiskGate.compute()'s max_conf (i.e. alpha
+        suppression), never the per-candidate DeltaShape term itself.
+        Re-querying the oracle per candidate is too slow (MC sampling; the
+        <100ms/decision budget already spends 3 oracle calls/decision on the
+        once-per-decision `beliefs`), so this reuses that cached value: it
+        scales/decomposes the existing cheap tell-heuristic term by how much
+        headroom the oracle says opponents currently have to be surprised
+        (avg_belief_conf), instead of leaving DeltaShape blind to B_phi.
         """
         if "h" in valid_actions:
             fan_now: Optional[int] = None
@@ -1034,6 +1140,10 @@ class MASKLLMAgent:
         alpha = (1.0 / (1.0 + math.exp(-logit))) * value_gate
 
         tell_before = self._discard_tell_threat(game)
+        avg_belief_conf = 0.0
+        if belief_shaping:
+            confs = [float(b.get("tenpai_confidence", 0.0)) for b in beliefs.values()]
+            avg_belief_conf = _clip(sum(confs) / len(confs)) if confs else 0.0
         w_shanten, w_ukeire, w_tell, w_value = 100.0, 1.0, 100.0, 10.0
         # w_shape sits between w_ukeire (1.0, a minor tie-break today) and
         # w_value (10.0, the realized-fan term) -- big enough to steer
@@ -1043,6 +1153,11 @@ class MASKLLMAgent:
         # needs to keep; this only biases which of several similarly-fast
         # paths gets picked).
         w_shape = 3.0
+        # belief_shaping weights: w_b matches w_tell's magnitude (the belief-
+        # scaled tell term replaces the raw tell term one-for-one); w_d/w_f
+        # are a first-pass guess, to be checked against the smoke test's
+        # candidate_scores spread before the full 10-seed run.
+        w_b, w_d, w_f = 100.0, 25.0, 25.0
         scored: Dict[str, Dict[str, float]] = {}
         for action in feasible:
             value = progress[action]
@@ -1056,10 +1171,21 @@ class MASKLLMAgent:
             if fan_shaping:
                 q_base += w_shape * shape_direction_by_action.get(action, 0.0)
             tell_after = self._discard_tell_threat(game, extra_tile=tile) if tile is not None else tell_before
-            delta_shape = w_tell * (tell_after - tell_before)
+            b_term = d_term = f_term = 0.0
+            if belief_shaping:
+                b_term = (tell_after - tell_before) * (1.0 - avg_belief_conf)
+                hand_after_discard = player.hand_tiles.copy()
+                if tile is not None:
+                    hand_after_discard.remove(tile)
+                    d_term = (1.0 - avg_belief_conf) if within_shanten(hand_after_discard, player.missing_suit, 0) else 0.0
+                f_term = tell_after * avg_belief_conf * _clip(value["shanten"] / 3.0)
+                delta_shape = w_b * b_term + w_d * d_term + w_f * f_term
+            else:
+                delta_shape = w_tell * (tell_after - tell_before)
             scored[action] = {
                 "q_base": q_base, "delta_shape": delta_shape, "potential_fan": potential_fan,
                 "score": q_base + alpha * delta_shape,
+                "b_term": b_term, "d_term": d_term, "f_term": f_term,
             }
 
         best_action = max(scored, key=lambda a: scored[a]["score"])
@@ -1092,6 +1218,11 @@ class MASKLLMAgent:
             "q_base": scored[best_action]["q_base"],
             "delta_shape": scored[best_action]["delta_shape"],
             "potential_fan": scored[best_action]["potential_fan"],
+            "belief_shaping": belief_shaping,
+            "avg_belief_conf": round(avg_belief_conf, 4),
+            "b_term": scored[best_action]["b_term"],
+            "d_term": scored[best_action]["d_term"],
+            "f_term": scored[best_action]["f_term"],
             "candidate_scores": {a: round(v["score"], 3) for a, v in scored.items()},
             "z_state": z_state,
             "beliefs": beliefs,
@@ -1108,16 +1239,18 @@ class MASKLLMAgent:
         valid_actions = valid_actions if valid_actions is not None else get_legal_actions(game, self.player_id)
         z_state = self.tracker.update_from_game(game)
         beliefs = self._mc_beliefs(game) if self.use_mc_belief else self.belief_estimator.infer_all(game, self.player_id)
-        public_gate = self.risk_gate.compute(game, self.player_id, z_state, beliefs={})
-        gate = self.risk_gate.compute(game, self.player_id, z_state, beliefs)
+        use_cusum_uncertainty = self.gate_policy == "continuous_v7"
+        public_gate = self.risk_gate.compute(game, self.player_id, z_state, beliefs={}, use_cusum_uncertainty=use_cusum_uncertainty)
+        gate = self.risk_gate.compute(game, self.player_id, z_state, beliefs, use_cusum_uncertainty=use_cusum_uncertainty)
 
-        if self.gate_policy in ("continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5"):
+        if self.gate_policy in ("continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"):
             return self._continuous_gate_action(
                 game, valid_actions, z_state, beliefs, gate,
-                fan_shaping=(self.gate_policy in ("continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5")),
-                early_hu_penalty=(self.gate_policy in ("continuous_v3", "continuous_v4", "continuous_v5")),
-                early_hu_expected_value=(self.gate_policy in ("continuous_v4", "continuous_v5")),
-                early_hu_tightened=(self.gate_policy == "continuous_v5"),
+                fan_shaping=(self.gate_policy in ("continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7")),
+                early_hu_penalty=(self.gate_policy in ("continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7")),
+                early_hu_expected_value=(self.gate_policy in ("continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7")),
+                early_hu_tightened=(self.gate_policy in ("continuous_v5", "continuous_v6", "continuous_v7")),
+                belief_shaping=(self.gate_policy in ("continuous_v6", "continuous_v7")),
             )
 
         player = game.players[self.player_id]

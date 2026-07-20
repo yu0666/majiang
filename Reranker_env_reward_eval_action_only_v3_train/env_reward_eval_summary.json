@@ -1,0 +1,127 @@
+{
+  "model_path": "models/Qwen-Mahjong-V1-Reranker-SFT100-Merged",
+  "data_file": "Reranker_grpo_data/reranker_grpo_env_multimode_v3_action_only.jsonl",
+  "examples": 108,
+  "adapters": {
+    "base": {
+      "overall": {
+        "examples": 108,
+        "mean_selected_reward": 1.6903935185185186,
+        "mean_reference_reward": 1.7274305555555556,
+        "mean_gain_over_reference": -0.037037037037037035,
+        "positive_gain_rate": 0.05555555555555555,
+        "negative_gain_rate": 0.09259259259259259,
+        "best_action_rate": 0.4722222222222222,
+        "mean_regret": 0.4809027777777778,
+        "changed_reference_rate": 0.14814814814814814,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 62.9236069184521
+      },
+      "by_mode": {
+        "deceive": {
+          "examples": 17,
+          "mean_selected_reward": 1.8529411764705883,
+          "mean_reference_reward": 1.911764705882353,
+          "mean_gain_over_reference": -0.058823529411764705,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0.058823529411764705,
+          "best_action_rate": 0.5882352941176471,
+          "mean_regret": 0.5441176470588235,
+          "changed_reference_rate": 0.058823529411764705,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 61.03882340111715
+        },
+        "exploit": {
+          "examples": 78,
+          "mean_selected_reward": 2.014423076923077,
+          "mean_reference_reward": 2.0528846153846154,
+          "mean_gain_over_reference": -0.038461538461538464,
+          "positive_gain_rate": 0.07692307692307693,
+          "negative_gain_rate": 0.11538461538461539,
+          "best_action_rate": 0.5256410256410257,
+          "mean_regret": 0.3701923076923077,
+          "changed_reference_rate": 0.19230769230769232,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 63.63175384915219
+        },
+        "safe": {
+          "examples": 13,
+          "mean_selected_reward": -0.46634615384615385,
+          "mean_reference_reward": -0.46634615384615385,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0,
+          "mean_regret": 1.0625,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 61.13944224153574
+        }
+      }
+    },
+    "qwen-reranker-grpo-action-only-v3/checkpoint-80": {
+      "overall": {
+        "examples": 108,
+        "mean_selected_reward": 1.6903935185185186,
+        "mean_reference_reward": 1.7274305555555556,
+        "mean_gain_over_reference": -0.037037037037037035,
+        "positive_gain_rate": 0.05555555555555555,
+        "negative_gain_rate": 0.09259259259259259,
+        "best_action_rate": 0.4722222222222222,
+        "mean_regret": 0.4809027777777778,
+        "changed_reference_rate": 0.14814814814814814,
+        "json_parse_rate": 1,
+        "raw_legal_rate": 1,
+        "mean_latency_ms": 108.53263669586913
+      },
+      "by_mode": {
+        "deceive": {
+          "examples": 17,
+          "mean_selected_reward": 1.8529411764705883,
+          "mean_reference_reward": 1.911764705882353,
+          "mean_gain_over_reference": -0.058823529411764705,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0.058823529411764705,
+          "best_action_rate": 0.5882352941176471,
+          "mean_regret": 0.5441176470588235,
+          "changed_reference_rate": 0.058823529411764705,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 109.37200498986331
+        },
+        "exploit": {
+          "examples": 78,
+          "mean_selected_reward": 2.014423076923077,
+          "mean_reference_reward": 2.0528846153846154,
+          "mean_gain_over_reference": -0.038461538461538464,
+          "positive_gain_rate": 0.07692307692307693,
+          "negative_gain_rate": 0.11538461538461539,
+          "best_action_rate": 0.5256410256410257,
+          "mean_regret": 0.3701923076923077,
+          "changed_reference_rate": 0.19230769230769232,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 108.1194746433399
+        },
+        "safe": {
+          "examples": 13,
+          "mean_selected_reward": -0.46634615384615385,
+          "mean_reference_reward": -0.46634615384615385,
+          "mean_gain_over_reference": 0.0,
+          "positive_gain_rate": 0,
+          "negative_gain_rate": 0,
+          "best_action_rate": 0,
+          "mean_regret": 1.0625,
+          "changed_reference_rate": 0,
+          "json_parse_rate": 1,
+          "raw_legal_rate": 1,
+          "mean_latency_ms": 109.91397354966746
+        }
+      }
+    }
+  }
+}

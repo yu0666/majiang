@@ -1,0 +1,22 @@
+{
+  "checkpoint": "Neural_opponent_model_smoke/neural_opponent_policy.pth",
+  "data_file": "Neural_opponent_data/smoke_responsive_learned_teacher.jsonl",
+  "rows": 161,
+  "train_rows": 144,
+  "eval_rows": 17,
+  "input_dim": 377,
+  "hidden_dims": [
+    256,
+    128
+  ],
+  "best_legal_masked_acc": 0.47058823529411764,
+  "history": [
+    {
+      "loss": 3.4227447509765625,
+      "raw_acc": 0.0,
+      "legal_masked_acc": 0.47058823529411764,
+      "epoch": 1.0,
+      "train_loss": 3.5598248375786676
+    }
+  ]
+}

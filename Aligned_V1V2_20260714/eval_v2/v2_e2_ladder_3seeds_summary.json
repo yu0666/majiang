@@ -1,0 +1,761 @@
+{
+  "config": {
+    "seeds": [
+      2026071401,
+      2026072401,
+      2026073401
+    ],
+    "games_per_seed_per_method": 200,
+    "backend": "local_qwen",
+    "model_path": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/models/Qwen-Mahjong-V1-Aligned-SFT-20260714-Merged",
+    "adapter_path": "/home-students/yu0666/majiang/majiang_ai/mahjong-ai-battle-main/qwen-v2-aligned-grpo-20260714/best_grpo_adapter",
+    "opponent_style": "responsive",
+    "defender_threat_model": "blend",
+    "defender_threat_threshold": 0.7,
+    "defender_tell_weight": 0.3,
+    "l2_target_filter": "mc",
+    "l2_target_prob_threshold": 0.78,
+    "l2_forced_deceive": "off",
+    "l2_max_shanten_regret": 0,
+    "l2_min_ukeire_ratio": 1.0,
+    "l2_threat_gate_threshold": 0.7,
+    "l2_threat_response_model": "blend",
+    "l2_threat_response_tell_weight": 0.3,
+    "l2_max_start_shanten": 2,
+    "max_new_tokens": 64
+  },
+  "per_seed": [
+    {
+      "seed": 2026071401,
+      "V2_L0": {
+        "games": 200,
+        "avg_net": 17.15,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 100.03188241755753,
+          "trimmed_mean_10pct": 2.9375,
+          "p10": -40.0,
+          "p90": 80.0,
+          "min": -360.0,
+          "max": 960.0
+        },
+        "hu_rate": 0.175,
+        "dealin_rate": 0.14,
+        "avg_steps": 60.58,
+        "end_state": {
+          "wall_exhaustion_rate": 0.975,
+          "final_ready_rate_non_hu": 0.24848484848484848,
+          "hua_zhu_rate_non_hu": 0.0,
+          "avg_final_shanten_non_hu": 0.8727272727272727
+        },
+        "conditional_net": {
+          "hu": 36.0,
+          "dealin": -47.5,
+          "neither_hu_nor_dealin": 25.547445255474454
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.15944068874414627,
+          "positive_shanten_regret_rate": 0.15944068874414627,
+          "safe_overrides": 0
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.26666666666666666,
+        "FFR_counts": {
+          "false_folds": 356,
+          "false_fold_opportunities": 1335,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 96.92363603971899,
+          "p95": 103.56495715677738,
+          "p99": 115.9067980479449
+        },
+        "mode_counts": {
+          "exploit": 3238
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      },
+      "V2_L1": {
+        "games": 200,
+        "avg_net": 31.2,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 123.12822584606646,
+          "trimmed_mean_10pct": 6.875,
+          "p10": -40.0,
+          "p90": 120.0,
+          "min": -320.0,
+          "max": 960.0
+        },
+        "hu_rate": 0.265,
+        "dealin_rate": 0.135,
+        "avg_steps": 60.245,
+        "end_state": {
+          "wall_exhaustion_rate": 0.97,
+          "final_ready_rate_non_hu": 0.2108843537414966,
+          "hua_zhu_rate_non_hu": 0.0,
+          "avg_final_shanten_non_hu": 0.8299319727891157
+        },
+        "conditional_net": {
+          "hu": 85.66037735849056,
+          "dealin": -29.62962962962963,
+          "neither_hu_nor_dealin": 20.833333333333332
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.1549012440887658,
+          "positive_shanten_regret_rate": 0.1549012440887658,
+          "safe_overrides": 139
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.2596302003081664,
+        "FFR_counts": {
+          "false_folds": 337,
+          "false_fold_opportunities": 1298,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 100.39074998348951,
+          "p95": 168.12943504191935,
+          "p99": 194.43337200209498
+        },
+        "mode_counts": {
+          "exploit": 2981,
+          "safe": 139
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      },
+      "V2_L2_MC": {
+        "games": 200,
+        "avg_net": 20.95,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 108.16930017338588,
+          "trimmed_mean_10pct": 2.5,
+          "p10": -40.0,
+          "p90": 80.0,
+          "min": -320.0,
+          "max": 960.0
+        },
+        "hu_rate": 0.25,
+        "dealin_rate": 0.14,
+        "avg_steps": 60.23,
+        "end_state": {
+          "wall_exhaustion_rate": 0.97,
+          "final_ready_rate_non_hu": 0.2,
+          "hua_zhu_rate_non_hu": 0.0,
+          "avg_final_shanten_non_hu": 0.84
+        },
+        "conditional_net": {
+          "hu": 70.6,
+          "dealin": -30.0,
+          "neither_hu_nor_dealin": 12.295081967213115
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.15866433015131004,
+          "positive_shanten_regret_rate": 0.15866433015131004,
+          "safe_overrides": 138
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 9
+        },
+        "FFR": 0.28405572755417957,
+        "FFR_counts": {
+          "false_folds": 367,
+          "false_fold_opportunities": 1292,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 132.72023992612958,
+          "p95": 206.9804419297725,
+          "p99": 274.8631581198424
+        },
+        "mode_counts": {
+          "exploit": 2961,
+          "safe": 138,
+          "deceive": 9
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      }
+    },
+    {
+      "seed": 2026072401,
+      "V2_L0": {
+        "games": 200,
+        "avg_net": 6.45,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 626.0478396256949,
+          "trimmed_mean_10pct": 6.3125,
+          "p10": -30.0,
+          "p90": 80.0,
+          "min": -7680.0,
+          "max": 3840.0
+        },
+        "hu_rate": 0.225,
+        "dealin_rate": 0.14,
+        "avg_steps": 60.005,
+        "end_state": {
+          "wall_exhaustion_rate": 0.95,
+          "final_ready_rate_non_hu": 0.2838709677419355,
+          "hua_zhu_rate_non_hu": 0.0064516129032258064,
+          "avg_final_shanten_non_hu": 0.7483870967741936
+        },
+        "conditional_net": {
+          "hu": 20.666666666666668,
+          "dealin": -28.571428571428573,
+          "neither_hu_nor_dealin": 9.133858267716535
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.1568186814519092,
+          "positive_shanten_regret_rate": 0.1568186814519092,
+          "safe_overrides": 0
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.31916902738432484,
+        "FFR_counts": {
+          "false_folds": 338,
+          "false_fold_opportunities": 1059,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 97.00481011532247,
+          "p95": 102.97378106042743,
+          "p99": 115.87330396287143
+        },
+        "mode_counts": {
+          "exploit": 3176
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      },
+      "V2_L1": {
+        "games": 200,
+        "avg_net": 29.95,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 114.5185465328651,
+          "trimmed_mean_10pct": 10.1875,
+          "p10": -20.0,
+          "p90": 80.0,
+          "min": -80.0,
+          "max": 960.0
+        },
+        "hu_rate": 0.32,
+        "dealin_rate": 0.15,
+        "avg_steps": 59.565,
+        "end_state": {
+          "wall_exhaustion_rate": 0.935,
+          "final_ready_rate_non_hu": 0.22058823529411764,
+          "hua_zhu_rate_non_hu": 0.0,
+          "avg_final_shanten_non_hu": 0.7941176470588235
+        },
+        "conditional_net": {
+          "hu": 62.34375,
+          "dealin": -27.333333333333332,
+          "neither_hu_nor_dealin": 26.60377358490566
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.14731881221110585,
+          "positive_shanten_regret_rate": 0.14731881221110585,
+          "safe_overrides": 115
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.32479508196721313,
+        "FFR_counts": {
+          "false_folds": 317,
+          "false_fold_opportunities": 976,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 99.56229198724031,
+          "p95": 166.1733710207045,
+          "p99": 195.9850168786943
+        },
+        "mode_counts": {
+          "exploit": 2897,
+          "safe": 115
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      },
+      "V2_L2_MC": {
+        "games": 200,
+        "avg_net": 26.95,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 94.01168810312892,
+          "trimmed_mean_10pct": 11.25,
+          "p10": -20.0,
+          "p90": 80.0,
+          "min": -80.0,
+          "max": 960.0
+        },
+        "hu_rate": 0.325,
+        "dealin_rate": 0.14,
+        "avg_steps": 59.53,
+        "end_state": {
+          "wall_exhaustion_rate": 0.935,
+          "final_ready_rate_non_hu": 0.22962962962962963,
+          "hua_zhu_rate_non_hu": 0.0,
+          "avg_final_shanten_non_hu": 0.7777777777777778
+        },
+        "conditional_net": {
+          "hu": 63.84615384615385,
+          "dealin": -27.142857142857142,
+          "neither_hu_nor_dealin": 18.69158878504673
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.147632728686787,
+          "positive_shanten_regret_rate": 0.147632728686787,
+          "safe_overrides": 114
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 5
+        },
+        "FFR": 0.3305439330543933,
+        "FFR_counts": {
+          "false_folds": 316,
+          "false_fold_opportunities": 956,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 128.78760881721973,
+          "p95": 208.64437706768513,
+          "p99": 267.04404409974813
+        },
+        "mode_counts": {
+          "exploit": 2880,
+          "safe": 114,
+          "deceive": 5
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      }
+    },
+    {
+      "seed": 2026073401,
+      "V2_L0": {
+        "games": 200,
+        "avg_net": -67.7,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 769.0810815512258,
+          "trimmed_mean_10pct": 0.6875,
+          "p10": -40.0,
+          "p90": 60.0,
+          "min": -7680.0,
+          "max": 2560.0
+        },
+        "hu_rate": 0.18,
+        "dealin_rate": 0.125,
+        "avg_steps": 60.6,
+        "end_state": {
+          "wall_exhaustion_rate": 0.99,
+          "final_ready_rate_non_hu": 0.20121951219512196,
+          "hua_zhu_rate_non_hu": 0.018292682926829267,
+          "avg_final_shanten_non_hu": 0.8902439024390244
+        },
+        "conditional_net": {
+          "hu": 100.0,
+          "dealin": -34.4,
+          "neither_hu_nor_dealin": -117.12230215827338
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.15785133251718586,
+          "positive_shanten_regret_rate": 0.15785133251718586,
+          "safe_overrides": 0
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.340118187787262,
+        "FFR_counts": {
+          "false_folds": 518,
+          "false_fold_opportunities": 1523,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 98.11903489753604,
+          "p95": 125.23798504844308,
+          "p99": 221.17045894265175
+        },
+        "mode_counts": {
+          "exploit": 3181
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      },
+      "V2_L1": {
+        "games": 200,
+        "avg_net": -58.3,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 680.2375393934096,
+          "trimmed_mean_10pct": 5.3125,
+          "p10": -40.0,
+          "p90": 80.0,
+          "min": -7680.0,
+          "max": 480.0
+        },
+        "hu_rate": 0.235,
+        "dealin_rate": 0.14,
+        "avg_steps": 60.385,
+        "end_state": {
+          "wall_exhaustion_rate": 0.975,
+          "final_ready_rate_non_hu": 0.19607843137254902,
+          "hua_zhu_rate_non_hu": 0.0196078431372549,
+          "avg_final_shanten_non_hu": 0.9019607843137255
+        },
+        "conditional_net": {
+          "hu": 56.170212765957444,
+          "dealin": -29.285714285714285,
+          "neither_hu_nor_dealin": -107.84
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.15701312124538833,
+          "positive_shanten_regret_rate": 0.15701312124538833,
+          "safe_overrides": 119
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 0
+        },
+        "FFR": 0.3408010862186015,
+        "FFR_counts": {
+          "false_folds": 502,
+          "false_fold_opportunities": 1473,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 100.42793513275683,
+          "p95": 161.01141110993922,
+          "p99": 195.7911669742316
+        },
+        "mode_counts": {
+          "exploit": 2986,
+          "safe": 119
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      },
+      "V2_L2_MC": {
+        "games": 200,
+        "avg_net": -64.6,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 677.6443314896082,
+          "trimmed_mean_10pct": 4.0,
+          "p10": -40.0,
+          "p90": 60.0,
+          "min": -7680.0,
+          "max": 320.0
+        },
+        "hu_rate": 0.23,
+        "dealin_rate": 0.13,
+        "avg_steps": 60.295,
+        "end_state": {
+          "wall_exhaustion_rate": 0.975,
+          "final_ready_rate_non_hu": 0.16883116883116883,
+          "hua_zhu_rate_non_hu": 0.01948051948051948,
+          "avg_final_shanten_non_hu": 0.9415584415584416
+        },
+        "conditional_net": {
+          "hu": 55.869565217391305,
+          "dealin": -33.46153846153846,
+          "neither_hu_nor_dealin": -114.21875
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.15679241099158983,
+          "positive_shanten_regret_rate": 0.15679241099158983,
+          "safe_overrides": 120
+        },
+        "DIR": 0.0,
+        "DIR_counts": {
+          "induced_dealin": 0,
+          "deceive_windows": 5
+        },
+        "FFR": 0.3400138217000691,
+        "FFR_counts": {
+          "false_folds": 492,
+          "false_fold_opportunities": 1447,
+          "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+        },
+        "decision_latency_ms": {
+          "p50": 131.64977310225368,
+          "p95": 209.36652296222746,
+          "p99": 271.5263511054218
+        },
+        "mode_counts": {
+          "exploit": 2966,
+          "safe": 120,
+          "deceive": 5
+        },
+        "candidate_reranker": {
+          "enabled_states": 0,
+          "used_states": 0,
+          "changed_actions": 0,
+          "parsed_outputs": 0,
+          "use_rate": 0.0,
+          "change_rate_when_used": 0.0,
+          "parse_rate_when_used": 0.0
+        }
+      }
+    }
+  ],
+  "aggregate": {
+    "mean": {
+      "V2_L0": {
+        "avg_net": -14.700000000000001,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 498.3869345314927,
+          "trimmed_mean_10pct": 3.3125,
+          "p10": -36.666666666666664,
+          "p90": 73.33333333333333,
+          "min": -5240.0,
+          "max": 2453.3333333333335
+        },
+        "hu_rate": 0.19333333333333333,
+        "dealin_rate": 0.135,
+        "DIR": 0.0,
+        "FFR": 0.3086512939460845,
+        "avg_steps": 60.395,
+        "end_state": {
+          "wall_exhaustion_rate": 0.9716666666666667,
+          "final_ready_rate_non_hu": 0.24452510947396863,
+          "hua_zhu_rate_non_hu": 0.008248098610018358,
+          "avg_final_shanten_non_hu": 0.8371194239801636
+        },
+        "conditional_net": {
+          "hu": 52.22222222222222,
+          "dealin": -36.82380952380952,
+          "neither_hu_nor_dealin": -27.480332878360798
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.15803690090441377,
+          "positive_shanten_regret_rate": 0.15803690090441377
+        },
+        "safe_overrides": 0,
+        "deceive_windows": 0,
+        "induced_dealin": 0,
+        "false_folds": 1212,
+        "false_fold_opportunities": 3917,
+        "latency_ms": {
+          "p50": 97.34916035085917,
+          "p95": 110.5922410885493,
+          "p99": 150.9835203178227
+        },
+        "mode_counts": {
+          "exploit": 9595,
+          "safe": 0,
+          "deceive": 0
+        }
+      },
+      "V2_L1": {
+        "avg_net": 0.9500000000000005,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 305.9614372574471,
+          "trimmed_mean_10pct": 7.458333333333333,
+          "p10": -33.333333333333336,
+          "p90": 93.33333333333333,
+          "min": -2693.3333333333335,
+          "max": 800.0
+        },
+        "hu_rate": 0.2733333333333333,
+        "dealin_rate": 0.14166666666666666,
+        "DIR": 0.0,
+        "FFR": 0.30840878949799366,
+        "avg_steps": 60.065,
+        "end_state": {
+          "wall_exhaustion_rate": 0.96,
+          "final_ready_rate_non_hu": 0.20918367346938777,
+          "hua_zhu_rate_non_hu": 0.006535947712418301,
+          "avg_final_shanten_non_hu": 0.8420034680538883
+        },
+        "conditional_net": {
+          "hu": 68.058113374816,
+          "dealin": -28.749559082892414,
+          "neither_hu_nor_dealin": -20.134297693920338
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.15307772584842,
+          "positive_shanten_regret_rate": 0.15307772584842
+        },
+        "safe_overrides": 373,
+        "deceive_windows": 0,
+        "induced_dealin": 0,
+        "false_folds": 1156,
+        "false_fold_opportunities": 3747,
+        "latency_ms": {
+          "p50": 100.12699236782889,
+          "p95": 165.10473905752102,
+          "p99": 195.40318528500697
+        },
+        "mode_counts": {
+          "exploit": 8864,
+          "safe": 373,
+          "deceive": 0
+        }
+      },
+      "V2_L2_MC": {
+        "avg_net": -5.5666666666666655,
+        "net_distribution": {
+          "median": 0.0,
+          "std": 293.2751065887077,
+          "trimmed_mean_10pct": 5.916666666666667,
+          "p10": -33.333333333333336,
+          "p90": 73.33333333333333,
+          "min": -2693.3333333333335,
+          "max": 746.6666666666666
+        },
+        "hu_rate": 0.2683333333333333,
+        "dealin_rate": 0.1366666666666667,
+        "DIR": 0.0,
+        "FFR": 0.31820449410288065,
+        "avg_steps": 60.01833333333333,
+        "end_state": {
+          "wall_exhaustion_rate": 0.96,
+          "final_ready_rate_non_hu": 0.19948693282026617,
+          "hua_zhu_rate_non_hu": 0.006493506493506493,
+          "avg_final_shanten_non_hu": 0.8531120731120732
+        },
+        "conditional_net": {
+          "hu": 63.43857302118172,
+          "dealin": -30.2014652014652,
+          "neither_hu_nor_dealin": -27.744026415913385
+        },
+        "action_efficiency": {
+          "avg_shanten_regret": 0.15436315660989564,
+          "positive_shanten_regret_rate": 0.15436315660989564
+        },
+        "safe_overrides": 372,
+        "deceive_windows": 19,
+        "induced_dealin": 0,
+        "false_folds": 1175,
+        "false_fold_opportunities": 3695,
+        "latency_ms": {
+          "p50": 131.052540615201,
+          "p95": 208.33044731989503,
+          "p99": 271.1445177750041
+        },
+        "mode_counts": {
+          "exploit": 8807,
+          "safe": 372,
+          "deceive": 19
+        }
+      }
+    },
+    "pairwise": {
+      "V2_L2_MC_vs_V2_L1_avg_net": {
+        "n": 3,
+        "mean_diff": -6.516666666666666,
+        "sd_diff": 3.6298530732432317,
+        "t": -3.109546732306771,
+        "df": 2,
+        "t_p_value": 0.08971991513466253,
+        "sign_test_p": 0.25
+      },
+      "V2_L2_MC_vs_V2_L0_avg_net": {
+        "n": 3,
+        "mean_diff": 9.133333333333336,
+        "sd_diff": 9.850042301093598,
+        "t": 1.6060232933252891,
+        "df": 2,
+        "t_p_value": 0.24949812975342653,
+        "sign_test_p": 0.25
+      },
+      "V2_L1_vs_V2_L0_avg_net": {
+        "n": 3,
+        "mean_diff": 15.650000000000002,
+        "sd_diff": 7.184879957243543,
+        "t": 3.7727276307692548,
+        "df": 2,
+        "t_p_value": 0.06362519231735947,
+        "sign_test_p": 0.25
+      }
+    }
+  }
+}

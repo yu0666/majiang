@@ -1,0 +1,95 @@
+{
+  "task": "MASK-SFT data generation",
+  "teacher": "heuristic_l2_mask",
+  "backend": "heuristic_fallback",
+  "seeds": [
+    2026074301
+  ],
+  "games_per_seed": 100,
+  "total_games": 100,
+  "output_file": "Reranker_teacher_safe_deceive_public_1seed_100games/reranker_teacher_safe_deceive.jsonl",
+  "games_trace": "Reranker_teacher_safe_deceive_public_1seed_100games/mask_sft_teacher_games.jsonl",
+  "steps_trace": "Reranker_teacher_safe_deceive_public_1seed_100games/mask_sft_teacher_steps.jsonl",
+  "assistant_format": "reranker",
+  "reranker_augment_modes": [
+    "safe",
+    "deceive"
+  ],
+  "metadata": "minimal",
+  "raw_examples": 985,
+  "kept_examples": 983,
+  "filtered_examples": 2,
+  "raw_mode_counts": {
+    "safe": 776,
+    "deceive": 209
+  },
+  "kept_mode_counts": {
+    "safe": 776,
+    "deceive": 207
+  },
+  "filter_reasons": {
+    "kept": 983,
+    "deceive_overlap": 2
+  },
+  "game_metrics": {
+    "games": 100,
+    "avg_net": 26.5,
+    "hu_rate": 0.26,
+    "dealin_rate": 0.03,
+    "avg_steps": 57.76,
+    "DIR": 0.0,
+    "DIR_counts": {
+      "induced_dealin": 0,
+      "deceive_windows": 32
+    },
+    "FFR": 0.5735056542810986,
+    "FFR_counts": {
+      "false_folds": 355,
+      "false_fold_opportunities": 619,
+      "note": "Rule bots almost always hu when legal, so this stays near zero until LLM opponents are added."
+    },
+    "decision_latency_ms": {
+      "p50": 23.573447950184345,
+      "p95": 52.233868977054954,
+      "p99": 85.85988893173635
+    },
+    "mode_counts": {
+      "exploit": 1318,
+      "deceive": 32
+    },
+    "candidate_reranker": {
+      "enabled_states": 0,
+      "used_states": 0,
+      "changed_actions": 0,
+      "parsed_outputs": 0,
+      "use_rate": 0.0,
+      "change_rate_when_used": 0.0,
+      "parse_rate_when_used": 0.0
+    }
+  },
+  "defender_cfg": {
+    "threat_threshold": 0.4,
+    "oracle_samples": 30,
+    "beta": 2.0,
+    "danger_threshold": 1,
+    "ffr_hand_shanten": 1,
+    "threat_model": "blend",
+    "tell_weight": 0.3,
+    "tell_window": 6,
+    "learned_model_path": "Defender_danger_model/danger_model.pth"
+  },
+  "mask_teacher_cfg": {
+    "mask_oracle_samples": 30,
+    "mask_oracle_beta": 2.0,
+    "mask_danger_threshold": 1,
+    "mask_dir_ready_threshold": 0,
+    "mask_forced_deceive": "eligible",
+    "mask_deceive_style": "threat",
+    "mask_threat_gate_mode": "delta_only",
+    "mask_threat_min_delta": 0.03,
+    "mask_threat_require_real_target": true,
+    "mask_threat_target_signal": "mc",
+    "mask_threat_target_prob_threshold": 0.78,
+    "mask_log_counterfactual": true
+  }
+}
