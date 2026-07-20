@@ -255,6 +255,7 @@ def play_one_game_ppo(
     
     Follows the same game loop structure as run_gate1_experiments.py.
     """
+    device = next(policy.parameters()).device
     game, game_info = init_game_ppo(seed, opponent_style)
     start_balance = game.players[0].balance
     
@@ -299,7 +300,7 @@ def play_one_game_ppo(
             
             # Extract features and get parameters from policy
             state_features = extract_state_features(game, 0, z_state, beliefs, gate)
-            state_tensor = torch.tensor(state_features, dtype=torch.float32)
+            state_tensor = torch.tensor(state_features, dtype=torch.float32, device=device)
             
             with torch.no_grad():
                 params_scaled, log_prob, value = policy.get_action(state_tensor, deterministic=deterministic)
@@ -312,7 +313,7 @@ def play_one_game_ppo(
             if collect_trajectory:
                 trajectory_steps.append(TrajectoryStep(
                     state=np.array(state_features),
-                    action=params_scaled.numpy(),
+                    action=params_scaled.cpu().numpy(),
                     log_prob=log_prob.item(),
                     reward=0.0,  # Will be filled at end
                     value=value.item(),

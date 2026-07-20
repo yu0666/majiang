@@ -190,7 +190,8 @@ def compute_gae(
     returns = np.zeros(T)
     
     # Last step advantage = episode_return - V(s_T)
-    last_state = torch.tensor(trajectory.steps[-1].state, dtype=torch.float32)
+    device = next(policy.parameters()).device
+    last_state = torch.tensor(trajectory.steps[-1].state, dtype=torch.float32, device=device)
     with torch.no_grad():
         _, _, last_value = policy(last_state)
     last_value = last_value.item()
@@ -254,12 +255,13 @@ class PPOBuffer:
         if not all_states:
             return {}
         
-        # Convert to tensors
-        states = torch.tensor(np.array(all_states), dtype=torch.float32)
-        actions = torch.tensor(np.array(all_actions), dtype=torch.float32)
-        old_log_probs = torch.tensor(all_old_log_probs, dtype=torch.float32)
-        advantages = torch.tensor(all_advantages, dtype=torch.float32)
-        returns = torch.tensor(all_returns, dtype=torch.float32)
+        # Convert to tensors (on same device as policy)
+        device = next(policy.parameters()).device
+        states = torch.tensor(np.array(all_states), dtype=torch.float32, device=device)
+        actions = torch.tensor(np.array(all_actions), dtype=torch.float32, device=device)
+        old_log_probs = torch.tensor(all_old_log_probs, dtype=torch.float32, device=device)
+        advantages = torch.tensor(all_advantages, dtype=torch.float32, device=device)
+        returns = torch.tensor(all_returns, dtype=torch.float32, device=device)
         
         # Normalize advantages
         if len(advantages) > 1:
