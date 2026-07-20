@@ -499,6 +499,9 @@ def ppo_update(
     advantages = data["advantages"]
     returns = data["returns"]
     
+    # Normalize advantages (standard PPO practice)
+    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+    
     total_policy_loss = 0.0
     total_value_loss = 0.0
     total_entropy = 0.0
@@ -516,8 +519,9 @@ def ppo_update(
         surr2 = torch.clamp(ratio, 1.0 - clip_eps, 1.0 + clip_eps) * advantages
         policy_loss = -torch.min(surr1, surr2).mean()
         
-        # Value loss
-        value_loss = F.mse_loss(values, returns)
+        # Value loss (with clipping to prevent explosion)
+        returns_clipped = torch.clamp(returns, -500.0, 500.0)
+        value_loss = F.mse_loss(values, returns_clipped)
         
         # Entropy bonus
         entropy_loss = -entropy.mean()
