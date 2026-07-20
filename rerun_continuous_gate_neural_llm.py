@@ -33,6 +33,7 @@ METHOD = {
     "L0": "llm_base", "L1": "llm_reactive_z",
     "L2_continuous": "llm_mask", "L2_continuous_v2": "llm_mask", "L2_continuous_v3": "llm_mask",
     "L2_continuous_v4": "llm_mask", "L2_continuous_v5": "llm_mask", "L2_continuous_v6": "llm_mask",
+    "L2_continuous_v7": "llm_mask",
 }
 DEFAULT_VARIANTS = ["L0", "L1", "L2_continuous"]
 
@@ -141,6 +142,8 @@ def common_command(args: argparse.Namespace, variant: str, seed: int, output: Pa
         command.extend(["--mask-gate-policy", "continuous_v5"])
     elif variant == "L2_continuous_v6":
         command.extend(["--mask-gate-policy", "continuous_v6"])
+    elif variant == "L2_continuous_v7":
+        command.extend(["--mask-gate-policy", "continuous_v7"])
     return command
 
 
