@@ -562,6 +562,7 @@ def train_ppo(
     seed: int = 42,
     mc_samples: int = 5,
     belief_surrogate_path: Optional[str] = None,
+    checkpoint_freq: int = 0,
 ):
     """Main PPO training loop."""
     # Set seeds
@@ -681,6 +682,17 @@ def train_ppo(
                     "avg_return": eval_avg,
                 }, checkpoint_path)
                 print(f"  [Saved] New best policy: {eval_avg:.2f}")
+            
+            # Periodic checkpoint
+            if checkpoint_freq > 0 and iteration % checkpoint_freq == 0:
+                ckpt_path = save_path / f"policy_iter{iteration}.pt"
+                torch.save({
+                    "iteration": iteration,
+                    "policy_state_dict": policy.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "avg_return": eval_avg,
+                }, ckpt_path)
+                print(f"  [Checkpoint] Saved iter {iteration}: {eval_avg:.2f}")
     
     # Save final policy
     final_path = save_path / "final_policy.pt"
@@ -709,6 +721,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--mc-samples", type=int, default=5, help="MC samples for belief estimation (lower=faster)")
     parser.add_argument("--belief-surrogate", type=str, default=None, help="Path to belief_surrogate.pt (replaces MC if provided)")
+    parser.add_argument("--checkpoint-freq", type=int, default=0, help="Save checkpoint every N iterations (0=disabled)")
     
     args = parser.parse_args()
     
@@ -727,4 +740,5 @@ if __name__ == "__main__":
         seed=args.seed,
         mc_samples=args.mc_samples,
         belief_surrogate_path=args.belief_surrogate,
+        checkpoint_freq=args.checkpoint_freq,
     )
