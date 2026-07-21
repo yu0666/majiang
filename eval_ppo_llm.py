@@ -34,7 +34,7 @@ import torch
 from collect_belief_data import extract_opponent_public_features
 from game import MahjongGame, bot_decide_exchange, bot_decide_missing_suit, bot_decide_turn_action, parse_console_tile
 from mask_llm import MASKLLMAgent, PublicOpponentTracker, RiskGate, _clip
-from ppo_agent import MASKPolicyNet, unscale_params
+from ppo_agent import MASKPolicyNet, PARAM_NAMES, unscale_params
 from ppo_features import extract_state_features
 from train_belief_surrogate import BeliefSurrogate
 
@@ -86,7 +86,11 @@ def get_ppo_params_at_step(
         params_scaled, _, _ = policy.get_action(state_tensor, deterministic=True)
         params_actual = unscale_params(params_scaled)
 
-    return params_actual
+    # Convert tensor to dict
+    params_dict = {}
+    for i, name in enumerate(PARAM_NAMES):
+        params_dict[name] = params_actual[i].item()
+    return params_dict
 
 
 def play_one_game_eval(
