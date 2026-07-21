@@ -576,7 +576,7 @@ def train_ppo(
     # Load belief surrogate if provided
     belief_surrogate = None
     if belief_surrogate_path and os.path.exists(belief_surrogate_path):
-        ckpt = torch.load(belief_surrogate_path, map_location=device)
+        ckpt = torch.load(belief_surrogate_path, map_location=device, weights_only=False)
         belief_surrogate = BeliefSurrogate(input_dim=ckpt.get("input_dim", 18)).to(device)
         belief_surrogate.load_state_dict(ckpt["model_state"])
         belief_surrogate.eval()

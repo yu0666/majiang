@@ -252,7 +252,7 @@ def main():
 
     # Load policy
     print(f"Loading policy from {args.policy_path}")
-    ckpt = torch.load(args.policy_path, map_location=args.device)
+    ckpt = torch.load(args.policy_path, map_location=args.device, weights_only=False)
     policy = MASKPolicyNet().to(args.device)
     policy.load_state_dict(ckpt["policy_state_dict"])
     policy.eval()
@@ -260,7 +260,7 @@ def main():
     # Load belief surrogate
     belief_surrogate = None
     if args.belief_surrogate and os.path.exists(args.belief_surrogate):
-        bckpt = torch.load(args.belief_surrogate, map_location=args.device)
+        bckpt = torch.load(args.belief_surrogate, map_location=args.device, weights_only=False)
         belief_surrogate = BeliefSurrogate(input_dim=bckpt.get("input_dim", 18)).to(args.device)
         belief_surrogate.load_state_dict(bckpt["model_state"])
         belief_surrogate.eval()
