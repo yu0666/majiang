@@ -432,6 +432,8 @@ class MASKLLMAgent:
         use_candidate_scoring: bool = False,
         reranker_max_candidates: int = 6,
         mc_seed: int = 0,
+        # PPO-learned parameter overrides (None = use hardcoded defaults)
+        ppo_params: Optional[Dict[str, float]] = None,
     ):
         self.player_id = player_id
         self.llm = llm
@@ -442,6 +444,8 @@ class MASKLLMAgent:
         if gate_policy not in {"rule", "learned", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"}:
             raise ValueError(f"Unknown gate_policy: {gate_policy}")
         self.gate_policy = gate_policy
+        # Store PPO-learned parameters (override hardcoded defaults in _continuous_gate_action)
+        self.ppo_params = ppo_params or {}
         self.belief_estimator = LLMBeliefEstimator(llm=self.belief_llm)
         self.risk_gate = RiskGate()
         self.tracker = PublicOpponentTracker([pid for pid in range(4) if pid != player_id])
@@ -1135,7 +1139,10 @@ class MASKLLMAgent:
             value_gate = _clip(max(max_potential_fan, 0.5 * max_shape_direction) / 3.0)
         else:
             value_gate = _clip(max_potential_fan / 3.0)
-        kappa1, kappa2, kappa3, rho_max = 3.0, 3.0, 4.0, 0.75
+        kappa1 = self.ppo_params.get("kappa1", 3.0)
+        kappa2 = self.ppo_params.get("kappa2", 3.0)
+        kappa3 = self.ppo_params.get("kappa3", 4.0)
+        rho_max = self.ppo_params.get("rho_max", 0.75)
         logit = kappa1 * risk_appetite - kappa2 * u - kappa3 * (1.0 if rho > rho_max else 0.0)
         alpha = (1.0 / (1.0 + math.exp(-logit))) * value_gate
 
@@ -1144,7 +1151,10 @@ class MASKLLMAgent:
         if belief_shaping:
             confs = [float(b.get("tenpai_confidence", 0.0)) for b in beliefs.values()]
             avg_belief_conf = _clip(sum(confs) / len(confs)) if confs else 0.0
-        w_shanten, w_ukeire, w_tell, w_value = 100.0, 1.0, 100.0, 10.0
+        w_shanten = self.ppo_params.get("w_shanten", 100.0)
+        w_ukeire = self.ppo_params.get("w_ukeire", 1.0)
+        w_tell = self.ppo_params.get("w_tell", 100.0)
+        w_value = self.ppo_params.get("w_value", 10.0)
         # w_shape sits between w_ukeire (1.0, a minor tie-break today) and
         # w_value (10.0, the realized-fan term) -- big enough to steer
         # direction among near-tied shanten/ukeire candidates, small enough
@@ -1152,12 +1162,14 @@ class MASKLLMAgent:
         # difference (shanten dominance is exactly what min-shanten play
         # needs to keep; this only biases which of several similarly-fast
         # paths gets picked).
-        w_shape = 3.0
+        w_shape = self.ppo_params.get("w_shape", 3.0)
         # belief_shaping weights: w_b matches w_tell's magnitude (the belief-
         # scaled tell term replaces the raw tell term one-for-one); w_d/w_f
         # are a first-pass guess, to be checked against the smoke test's
         # candidate_scores spread before the full 10-seed run.
-        w_b, w_d, w_f = 100.0, 25.0, 25.0
+        w_b = self.ppo_params.get("w_b", 100.0)
+        w_d = self.ppo_params.get("w_d", 25.0)
+        w_f = self.ppo_params.get("w_f", 25.0)
         scored: Dict[str, Dict[str, float]] = {}
         for action in feasible:
             value = progress[action]
