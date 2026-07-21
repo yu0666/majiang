@@ -32,10 +32,11 @@ import numpy as np
 import torch
 
 from collect_belief_data import extract_opponent_public_features
-from game import MahjongGame, bot_decide_exchange, bot_decide_missing_suit, bot_decide_turn_action, parse_console_tile
+from game import MahjongGame, bot_decide_exchange, bot_decide_missing_suit, bot_decide_response, bot_decide_turn_action, parse_console_tile
 from mask_llm import MASKLLMAgent, PublicOpponentTracker, RiskGate, _clip
 from ppo_agent import MASKPolicyNet, PARAM_NAMES, unscale_params
 from ppo_features import extract_state_features
+from prompt_builder import get_legal_actions
 from train_belief_surrogate import BeliefSurrogate
 
 
@@ -93,6 +94,80 @@ def get_ppo_params_at_step(
     return params_dict
 
 
+def execute_action(game: MahjongGame, pid: int, action: str, drawn_tile=None):
+    """Execute a player action (hu/gang/discard). Returns discarded tile or None."""
+    player = game.players[pid]
+    action = (action or "").strip()
+    discarded_tile = None
+
+    if action == "h" and player.can_hu():
+        win_tile = drawn_tile if drawn_tile else (player.hand_tiles[-1] if player.hand_tiles else None)
+        if win_tile is not None:
+            game.hu(pid, win_tile, True)
+            game.check_game_over()
+        return None
+
+    if action == "g":
+        gang_info = game.can_self_gang(pid)
+        if gang_info.get("can_gang"):
+            game.gang(pid, gang_info["gang_tiles"][0])
+            return None
+
+    if action.startswith("d "):
+        tile = parse_console_tile(action[2:])
+        if tile and game.discard_tile(pid, tile):
+            discarded_tile = tile
+
+    if discarded_tile is None:
+        legal_discards = [a for a in get_legal_actions(game, pid) if a.startswith("d ")]
+        if legal_discards:
+            tile = parse_console_tile(legal_discards[0][2:])
+            if tile and game.discard_tile(pid, tile):
+                discarded_tile = tile
+
+    return discarded_tile
+
+
+def resolve_responses_eval(
+    game: MahjongGame, discarded_tile, acting_pid: int, agent: MASKLLMAgent,
+) -> Dict[str, Any]:
+    """Resolve responses from other players after a discard."""
+    responses = game.check_responses(discarded_tile, acting_pid)
+    responded = False
+    agent_won_by_discard = False
+
+    for rid, acts in responses.items():
+        if responded:
+            break
+
+        player = game.players[rid]
+        if rid == 0:
+            # P0 (LLM agent) responds
+            valid = get_legal_actions(game, rid, response_actions=acts)
+            response_action = "h" if "h" in valid else agent.decide(game, valid)
+        else:
+            response_action = bot_decide_response(player, acts)
+
+        if response_action == "h" and "hu" in acts:
+            game.hu(rid, discarded_tile, False, acting_pid)
+            game.check_game_over()
+            responded = True
+            agent_won_by_discard = rid == 0
+        elif response_action == "g" and "gang" in acts:
+            game.gang(rid, discarded_tile, acting_pid)
+            game.current_player_id = rid
+            responded = True
+        elif response_action == "p" and "peng" in acts:
+            game.peng(rid, discarded_tile, acting_pid)
+            game.current_player_id = rid
+            responded = True
+
+    return {
+        "responded": responded,
+        "agent_won_by_discard": agent_won_by_discard,
+    }
+
+
 def play_one_game_eval(
     policy: MASKPolicyNet,
     agent: MASKLLMAgent,
@@ -119,88 +194,61 @@ def play_one_game_eval(
 
         pid = game.current_player_id
         player = game.players[pid]
-
         if player.is_hu:
             game.next_player()
             skip_draw = False
             continue
 
+        drawn_tile = None
         if not skip_draw:
-            drawn = game.draw_tile(pid)
-            if not drawn:
+            drawn_tile = game.draw_tile(pid)
+            if not drawn_tile:
                 game.check_game_over()
                 break
         else:
             skip_draw = False
 
         if pid == 0:
+            # Update tracker with latest game history
+            z_tracker.update_from_game(game)
             # Get PPO params for this step
             ppo_params = get_ppo_params_at_step(
                 policy, game, z_tracker, risk_gate, belief_surrogate, device
             )
-            # Update agent's PPO params dynamically
             agent.ppo_params = ppo_params
 
-            # Get valid actions
-            from prompt_builder import get_legal_actions
-            valid_actions = get_legal_actions(game, 0)
-
-            # LLM decides
-            action = agent.decide(game, valid_actions)
-
-            # Execute action
-            if action == "h":
-                try:
-                    game.process_response(0, "hu")
-                except Exception:
-                    pass
-            elif action.startswith("d "):
-                try:
-                    tile = parse_console_tile(action[2:])
-                    game.discard_tile(0, tile)
-                    z_tracker.update_from_game(game)
-                    # Handle responses
-                    responses = game.check_responses(tile, 0)
-                    for resp_pid, resp_list in sorted(responses.items(), key=lambda x: x[0]):
-                        if resp_pid == 0:
-                            continue
-                        if "hu" in resp_list:
-                            game.process_response(resp_pid, "hu")
-                            break
-                        elif "gang" in resp_list and random.random() < 0.3:
-                            game.process_response(resp_pid, "gang")
-                            break
-                        elif "peng" in resp_list and random.random() < 0.4:
-                            game.process_response(resp_pid, "peng")
-                            break
-                except Exception:
-                    pass
+            legal_actions = get_legal_actions(game, 0)
+            action = agent.decide(game, legal_actions)
         else:
-            # Bot turn
             action = bot_decide_turn_action(player, game)
-            if action.startswith("d "):
-                try:
-                    tile = parse_console_tile(action[2:])
-                    game.discard_tile(pid, tile)
-                    z_tracker.update_from_game(game)
-                    responses = game.check_responses(tile, pid)
-                    for resp_pid, resp_list in sorted(responses.items(), key=lambda x: x[0]):
-                        if resp_pid == pid:
-                            continue
-                        if "hu" in resp_list:
-                            game.process_response(resp_pid, "hu")
-                            break
-                        elif "gang" in resp_list and random.random() < 0.3:
-                            game.process_response(resp_pid, "gang")
-                            break
-                        elif "peng" in resp_list and random.random() < 0.4:
-                            game.process_response(resp_pid, "peng")
-                            break
-                except Exception:
-                    pass
 
-        if game.check_game_over():
+        discarded_tile = execute_action(game, pid, action, drawn_tile)
+        if game.is_game_over:
             break
+
+        if discarded_tile is None:
+            # hu or gang happened
+            if action == "g":
+                skip_draw = True
+                continue
+            game.next_player()
+            skip_draw = False
+            continue
+
+        # Resolve responses
+        response_info = resolve_responses_eval(game, discarded_tile, pid, agent)
+
+        if game.is_game_over:
+            break
+
+        if response_info["responded"]:
+            skip_draw = True
+        else:
+            game.next_player()
+            skip_draw = False
+
+    if not game.is_game_over:
+        game.check_game_over()
 
     end_balance = game.players[0].balance
     net_score = end_balance - start_balance
