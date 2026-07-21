@@ -246,12 +246,15 @@ def main():
 
     # Setup LLM
     print(f"Loading LLM from {args.model_path}")
-    try:
-        from local_llm_agent import LocalQwenAgent
-        llm = LocalQwenAgent(model_path=args.model_path, device=device)
-    except ImportError:
-        from llm_backends import make_local_qwen
-        llm = make_local_qwen(model_path=args.model_path, device=device)
+    from llm_backends import build_llm_callable
+    repo_dir = Path(__file__).resolve().parent
+    llm = build_llm_callable(
+        backend="local_qwen",
+        repo_dir=repo_dir,
+        model_path=args.model_path,
+        max_new_tokens=64,
+        temperature=0.0,
+    )
 
     # Create MASKLLMAgent with continuous_v7 gate policy
     agent = MASKLLMAgent(
