@@ -24,6 +24,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+import multiprocessing as mp
 from multiprocessing import Pool
 
 from belief_oracle import opponent_view_posterior
@@ -633,7 +634,10 @@ def train_ppo(
     print()
     
     # Create persistent pool for parallel collection
-    pool = Pool(processes=workers) if workers > 1 else None
+    pool = None
+    if workers > 1:
+        mp.set_start_method("spawn", force=True)
+        pool = Pool(processes=workers)
     
     for iteration in range(1, num_iterations + 1):
         start_time = time.time()
@@ -641,8 +645,10 @@ def train_ppo(
         
         # Collect trajectories (parallel if workers > 1)
         returns = []
+        # Move policy to CPU for safe pickling to workers
+        cpu_state = {k: v.cpu() for k, v in policy.state_dict().items()}
         game_args = [
-            (policy.state_dict(), belief_surrogate_path, 
+            (cpu_state, belief_surrogate_path, 
              seed * 10000 + iteration * 1000 + game_idx, mc_samples, "cpu")
             for game_idx in range(games_per_iteration)
         ]
