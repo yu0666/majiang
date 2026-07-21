@@ -24,6 +24,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+from multiprocessing import Pool
 
 from belief_oracle import opponent_view_posterior
 from collect_belief_data import extract_opponent_public_features
@@ -243,6 +244,36 @@ def _compute_tell_threat(game: MahjongGame, player_id: int, extra_tile: Optional
         return 0.0
     terminal_count = sum(1 for t in discards if t.number in (1, 9))
     return _clip(terminal_count / max(1, len(discards)))
+
+
+def _collect_one_game_worker(args):
+    """Worker function for parallel game collection (runs in separate process)."""
+    policy_state_dict, belief_ckpt_path, game_seed, mc_samples, device_str = args
+    
+    # Each worker creates its own CPU models
+    policy = MASKPolicyNet()
+    policy.load_state_dict(policy_state_dict)
+    policy.eval()
+    
+    belief_surrogate = None
+    if belief_ckpt_path and os.path.exists(belief_ckpt_path):
+        bckpt = torch.load(belief_ckpt_path, map_location="cpu", weights_only=False)
+        belief_surrogate = BeliefSurrogate(input_dim=bckpt.get("input_dim", 18))
+        belief_surrogate.load_state_dict(bckpt["model_state"])
+        belief_surrogate.eval()
+    
+    with torch.no_grad():
+        net_score, trajectory = play_one_game_ppo(
+            policy,
+            seed=game_seed,
+            opponent_style="responsive",
+            max_steps=200,
+            deterministic=False,
+            collect_trajectory=True,
+            mc_samples=mc_samples,
+            belief_surrogate=belief_surrogate,
+        )
+    return net_score, trajectory
 
 
 def play_one_game_ppo(
@@ -563,6 +594,7 @@ def train_ppo(
     mc_samples: int = 5,
     belief_surrogate_path: Optional[str] = None,
     checkpoint_freq: int = 0,
+    workers: int = 1,
 ):
     """Main PPO training loop."""
     # Set seeds
@@ -597,26 +629,30 @@ def train_ppo(
     print(f"Games per iteration: {games_per_iteration}")
     print(f"Device: {device}")
     print(f"Save directory: {save_dir}")
+    print(f"Workers: {workers}")
     print()
+    
+    # Create persistent pool for parallel collection
+    pool = Pool(processes=workers) if workers > 1 else None
     
     for iteration in range(1, num_iterations + 1):
         start_time = time.time()
         buffer.clear()
         
-        # Collect trajectories
+        # Collect trajectories (parallel if workers > 1)
         returns = []
-        for game_idx in range(games_per_iteration):
-            game_seed = seed * 10000 + iteration * 1000 + game_idx
-            net_score, trajectory = play_one_game_ppo(
-                policy,
-                seed=game_seed,
-                opponent_style="responsive",
-                max_steps=200,
-                deterministic=False,
-                collect_trajectory=True,
-                mc_samples=mc_samples,
-                belief_surrogate=belief_surrogate,
-            )
+        game_args = [
+            (policy.state_dict(), belief_surrogate_path, 
+             seed * 10000 + iteration * 1000 + game_idx, mc_samples, "cpu")
+            for game_idx in range(games_per_iteration)
+        ]
+        
+        if workers > 1:
+            results = pool.map(_collect_one_game_worker, game_args)
+        else:
+            results = [_collect_one_game_worker(args) for args in game_args]
+        
+        for net_score, trajectory in results:
             returns.append(net_score)
             if trajectory:
                 buffer.add(trajectory)
@@ -703,6 +739,11 @@ def train_ppo(
     }, final_path)
     print(f"\nTraining complete. Final policy saved to {final_path}")
     print(f"Best eval return: {best_avg_return:.2f}")
+    
+    # Cleanup pool
+    if pool is not None:
+        pool.close()
+        pool.join()
 
 
 if __name__ == "__main__":
@@ -722,6 +763,7 @@ if __name__ == "__main__":
     parser.add_argument("--mc-samples", type=int, default=5, help="MC samples for belief estimation (lower=faster)")
     parser.add_argument("--belief-surrogate", type=str, default=None, help="Path to belief_surrogate.pt (replaces MC if provided)")
     parser.add_argument("--checkpoint-freq", type=int, default=0, help="Save checkpoint every N iterations (0=disabled)")
+    parser.add_argument("--workers", type=int, default=1, help="Parallel workers for trajectory collection")
     
     args = parser.parse_args()
     
@@ -741,4 +783,5 @@ if __name__ == "__main__":
         mc_samples=args.mc_samples,
         belief_surrogate_path=args.belief_surrogate,
         checkpoint_freq=args.checkpoint_freq,
+        workers=args.workers,
     )
