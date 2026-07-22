@@ -44,6 +44,7 @@ from game import (
     bot_decide_response,
     bot_decide_turn_action,
     parse_console_tile,
+    print_table_info,
 )
 from llm_backends import build_llm_callable
 from mask_llm import LLMBeliefEstimator, MASKLLMAgent, PublicOpponentTracker, RiskGate, legalize_action
@@ -791,6 +792,7 @@ def play_one_game(
     gate_llm: Optional[LLMCallable] = None,
     defender_cfg: Optional[Dict[str, Any]] = None,
     mask_cfg: Optional[Dict[str, Any]] = None,
+    debug_game: bool = False,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]], List[Dict[str, Any]]]:
     game, opponent_funcs, defenders = init_game(seed, opponent_style, f"Gate1_{method}_{seed}", defender_cfg)
     start_balances = [p.balance for p in game.players]
@@ -956,6 +958,11 @@ def play_one_game(
                 action = opponent_funcs[pid][0](player, game)
 
         discarded_tile = execute_action(game, pid, action, drawn_tile)
+        if debug_game:
+            print_table_info(game, pid, drawn_tile)
+            print(f"  P{pid} 动作: {action}")
+            if pid == 0 and decision_state:
+                print(f"  P0 模式: {decision_state.get('mode', '?')} | 原因: {decision_state.get('reason', '')}")
         if game.is_game_over:
             break
 
@@ -1248,6 +1255,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 gate_llm=gate_llm,
                 defender_cfg=defender_cfg,
                 mask_cfg=mask_cfg,
+                debug_game=(i < args.debug_game),
             )
             all_games.append(game_row)
             all_steps.extend(step_rows)
@@ -1458,6 +1466,8 @@ def main() -> None:
     parser.add_argument("--max-new-tokens", type=int, default=128)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--output-dir", type=Path, default=RESULTS_DIR)
+    parser.add_argument("--debug-game", type=int, default=0,
+                        help="Print god's-eye view for the first N games (0=off).")
     args = parser.parse_args()
 
     summary = run(args)
