@@ -65,3 +65,10 @@ list/
 .DS_Store
 *.tmp
 *.bak
+# 实验评测输出目录
+Neural_LLM_*/
+v2_debug_*/
+*_1game/
+# 评测结果json
+ppo_*_eval*.json
+debug_one_game.json
