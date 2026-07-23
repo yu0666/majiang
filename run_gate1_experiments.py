@@ -49,6 +49,7 @@ from game import (
 from llm_backends import build_llm_callable
 from mask_llm import LLMBeliefEstimator, MASKLLMAgent, PublicOpponentTracker, RiskGate, legalize_action
 from policy_metrics import discard_progress_metrics
+from ppo_features import extract_state_features
 from prompt_builder import build_base_decision_prompt, build_state_prompt, get_legal_actions
 from rule_engine import ShantenCalculator
 
@@ -454,6 +455,13 @@ def choose_llm_base_action(
     valid_actions: List[str],
     llm: Optional[LLMCallable],
 ) -> Tuple[str, Dict[str, Any]]:
+    if "h" in valid_actions:
+        return "h", {
+            "mode": "exploit",
+            "reason": "common take-win rule",
+            "common_take_win": True,
+        }
+
     if llm is None:
         return choose_min_shanten_action(game, player_id, valid_actions), {
             "mode": "exploit",
@@ -483,7 +491,13 @@ def choose_reactive_z_action(
     gate = risk_gate.compute(game, player_id, z_state, beliefs={})
 
     if "h" in valid_actions:
-        return "h", {"z_state": z_state, "gate": gate, "mode": "exploit", "reason": "hu legal"}
+        return "h", {
+            "z_state": z_state,
+            "gate": gate,
+            "mode": "exploit",
+            "reason": "common take-win rule",
+            "common_take_win": True,
+        }
 
     if llm is not None:
         prompt = build_base_decision_prompt(game, player_id, valid_actions=valid_actions)
@@ -650,6 +664,18 @@ def make_step_trace(
         if chosen_result_shanten is not None and best_result_shanten is not None
         else None
     )
+    gate_features = None
+    if decision_state.get("gate") is not None:
+        try:
+            gate_features = extract_state_features(
+                game,
+                0,
+                decision_state.get("z_state", {}),
+                decision_state.get("beliefs", {}),
+                decision_state.get("gate", {}),
+            )
+        except Exception:
+            gate_features = None
     return {
         "game_id": game.game_id,
         "seed": seed,
@@ -664,6 +690,7 @@ def make_step_trace(
         "belief_json": decision_state.get("beliefs", {}),
         "risk_budget": decision_state.get("gate", {}).get("risk_budget"),
         "gate": decision_state.get("gate", {}),
+        "gate_features": gate_features,
         "public_gate": decision_state.get("public_gate", {}),
         "score_delta": player.balance - 10000,
         "true_tenpai": true_ready,
@@ -679,6 +706,10 @@ def make_step_trace(
         "dir_ready_threshold": decision_state.get("dir_ready_threshold"),
         "deceive_ready": decision_state.get("deceive_ready"),
         "ffr_ready": decision_state.get("ffr_ready"),
+        "deceive_attempted": decision_state.get("deceive_attempted"),
+        "deceive_action": decision_state.get("deceive_action"),
+        "can_deceive": decision_state.get("can_deceive"),
+        "deceive_block_reason": decision_state.get("deceive_block_reason"),
         "deceive_signal": decision_state.get("deceive_signal", {}),
         "counterfactual_exploit_action": decision_state.get("counterfactual_exploit_action"),
         "disguise_equals_exploit": decision_state.get("disguise_equals_exploit"),
@@ -790,6 +821,7 @@ def play_one_game(
     belief_llm: Optional[LLMCallable],
     reranker_llm: Optional[LLMCallable] = None,
     gate_llm: Optional[LLMCallable] = None,
+    neural_gate: Optional[Any] = None,
     defender_cfg: Optional[Dict[str, Any]] = None,
     mask_cfg: Optional[Dict[str, Any]] = None,
     debug_game: bool = False,
@@ -806,6 +838,7 @@ def play_one_game(
             belief_llm=belief_llm,
             reranker_llm=reranker_llm,
             gate_llm=gate_llm,
+            neural_gate=neural_gate,
             gate_policy=mask_cfg.get("gate_policy", "rule"),
             mc_seed=seed * 13 + 1,
             mc_oracle_samples=mask_cfg.get("oracle_samples", 30),
@@ -903,7 +936,15 @@ def play_one_game(
                 f"P{rid}": defenders[rid].threat_crn(game, snap_seeds, snapshot_samples) for rid in defenders
             }
             t0 = time.perf_counter()
-            if method == "llm_base":
+            if "h" in legal_actions:
+                action = "h"
+                decision_state = {
+                    "mode": "exploit",
+                    "action": "h",
+                    "reason": "common take-win rule",
+                    "common_take_win": True,
+                }
+            elif method == "llm_base":
                 action, decision_state = choose_llm_base_action(game, 0, legal_actions, llm)
             elif method == "llm_reactive_z":
                 action, decision_state = choose_reactive_z_action(game, 0, z_tracker, risk_gate, llm, legal_actions)
@@ -1162,6 +1203,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     gate_policy = getattr(args, "mask_gate_policy", "rule")
     gate_model_path = getattr(args, "gate_model_path", None)
     gate_adapter_path = getattr(args, "gate_adapter_path", None)
+    neural_gate_model_path = getattr(args, "neural_gate_model_path", None)
     if gate_policy == "learned":
         if not (gate_model_path or gate_adapter_path):
             raise ValueError("learned gate requires --gate-model-path or --gate-adapter-path")
@@ -1179,6 +1221,17 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         )
     else:
         gate_llm = None
+    if gate_policy == "neural":
+        if not neural_gate_model_path:
+            raise ValueError("neural gate requires --neural-gate-model-path")
+        from neural_gate_policy import NeuralGatePolicy
+
+        neural_gate = NeuralGatePolicy.load(
+            neural_gate_model_path,
+            device=getattr(args, "neural_gate_device", "cpu"),
+        )
+    else:
+        neural_gate = None
 
     defender_cfg = {
         "threat_threshold": args.threat_fold_threshold,
@@ -1253,6 +1306,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 belief_llm=belief_llm,
                 reranker_llm=reranker_llm,
                 gate_llm=gate_llm,
+                neural_gate=neural_gate,
                 defender_cfg=defender_cfg,
                 mask_cfg=mask_cfg,
                 debug_game=(i < args.debug_game),
@@ -1316,6 +1370,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "gate_policy": gate_policy,
         "gate_model_path": gate_model_path,
         "gate_adapter_path": gate_adapter_path,
+        "neural_gate_model_path": neural_gate_model_path,
         "opponent_style": args.opponent_style,
         "methods": list(args.methods),
         "games_per_method": args.games,
@@ -1438,10 +1493,12 @@ def main() -> None:
     parser.add_argument("--mask-candidate-scoring", action="store_true",
                         help="Rank candidates by conditional log probability instead of free generation.")
     parser.add_argument("--mask-reranker-max-candidates", type=int, default=6)
-    parser.add_argument("--mask-gate-policy", choices=["rule", "learned", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"], default="rule")
+    parser.add_argument("--mask-gate-policy", choices=["rule", "learned", "neural", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"], default="rule")
     parser.add_argument("--gate-model-path", default=None)
     parser.add_argument("--gate-adapter-path", default=None)
     parser.add_argument("--gate-max-new-tokens", type=int, default=8)
+    parser.add_argument("--neural-gate-model-path", default=None)
+    parser.add_argument("--neural-gate-device", default="cpu")
     parser.add_argument("--snapshot-oracle-samples", type=int, default=120,
                         help="MC samples for the CRN threat before/after snapshot (measurement only; higher = less noise).")
     parser.add_argument("--snapshot-crn-seeds", type=int, default=1,

@@ -401,6 +401,7 @@ class MASKLLMAgent:
         decision_llm: Optional[LLMCallable] = None,
         reranker_llm: Optional[LLMCallable] = None,
         gate_llm: Optional[LLMCallable] = None,
+        neural_gate: Optional[Any] = None,
         gate_policy: str = "rule",
         use_mc_belief: bool = True,
         mc_oracle_samples: int = 30,
@@ -441,7 +442,8 @@ class MASKLLMAgent:
         self.decision_llm = decision_llm if decision_llm is not None else llm
         self.reranker_llm = reranker_llm if reranker_llm is not None else self.decision_llm
         self.gate_llm = gate_llm
-        if gate_policy not in {"rule", "learned", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"}:
+        self.neural_gate = neural_gate
+        if gate_policy not in {"rule", "learned", "neural", "continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"}:
             raise ValueError(f"Unknown gate_policy: {gate_policy}")
         self.gate_policy = gate_policy
         # Store PPO-learned parameters (override hardcoded defaults in _continuous_gate_action)
@@ -1255,6 +1257,20 @@ class MASKLLMAgent:
         public_gate = self.risk_gate.compute(game, self.player_id, z_state, beliefs={}, use_cusum_uncertainty=use_cusum_uncertainty)
         gate = self.risk_gate.compute(game, self.player_id, z_state, beliefs, use_cusum_uncertainty=use_cusum_uncertainty)
 
+        if "h" in valid_actions:
+            self.last_decision = {
+                "mode": "exploit",
+                "action": "h",
+                "reason": "common take-win rule",
+                "gate_policy": self.gate_policy,
+                "z_state": z_state,
+                "beliefs": beliefs,
+                "gate": gate,
+                "public_gate": public_gate,
+                "common_take_win": True,
+            }
+            return "h"
+
         if self.gate_policy in ("continuous", "continuous_v2", "continuous_v3", "continuous_v4", "continuous_v5", "continuous_v6", "continuous_v7"):
             return self._continuous_gate_action(
                 game, valid_actions, z_state, beliefs, gate,
@@ -1290,16 +1306,28 @@ class MASKLLMAgent:
         ffr_ready = self.deceive_style == "threat" and not own_danger
         deceive_ready = ffr_ready if self.deceive_style == "threat" else dir_ready
         learned_gate_active = self.gate_policy == "learned" and self.gate_llm is not None
+        neural_gate_active = self.gate_policy == "neural" and self.neural_gate is not None
+        should_attempt_deceive = deceive_ready or self.forced_deceive == "always" or neural_gate_active
         deceive_action = (
             self._deceptive_discard(
                 game,
                 valid_actions,
                 beliefs,
-                relaxed_gate=learned_gate_active,
+                relaxed_gate=(learned_gate_active or neural_gate_active),
             )
-            if (deceive_ready or self.forced_deceive == "always")
+            if should_attempt_deceive
             else None
         )
+        deceive_block_reason = None
+        if not should_attempt_deceive:
+            deceive_block_reason = "not_attempted_by_rule_gate"
+        elif not deceive_action:
+            deceive_block_reason = (
+                (self._last_deceive_signal or {}).get("blocked_reason")
+                or "candidate_unavailable"
+            )
+        elif not deceive_action.startswith("d "):
+            deceive_block_reason = "candidate_not_discard"
         can_deceive = deceive_action is not None and deceive_action.startswith("d ")
         counterfactual_exploit_action = None
         disguise_equals_exploit = None
@@ -1308,6 +1336,13 @@ class MASKLLMAgent:
             disguise_equals_exploit = bool(counterfactual_exploit_action == deceive_action)
             if disguise_equals_exploit or not counterfactual_exploit_action.startswith("d "):
                 can_deceive = False
+                deceive_block_reason = (
+                    "same_as_exploit"
+                    if disguise_equals_exploit
+                    else "counterfactual_exploit_not_discard"
+                )
+        if can_deceive:
+            deceive_block_reason = None
         force_deceive = self.forced_deceive == "always" or (
             self.forced_deceive == "eligible" and deceive_ready and can_deceive
         )
@@ -1315,7 +1350,7 @@ class MASKLLMAgent:
         safe_override_applied = False
         if "h" in valid_actions:
             action, mode, reason = "h", "exploit", "take win"
-        elif learned_gate_active:
+        elif learned_gate_active or neural_gate_active:
             baseline_action, baseline_reason = get_exploit_action()
             safe_action = self._safe_discard(
                 game,
@@ -1327,13 +1362,16 @@ class MASKLLMAgent:
                 available_modes.append("safe")
             if can_deceive:
                 available_modes.append("deceive")
-            selected_mode = self._learned_gate_mode(
-                game,
-                z_state,
-                beliefs,
-                gate,
-                available_modes,
-            )
+            if neural_gate_active:
+                selected_mode = self._neural_gate_mode(game, z_state, beliefs, gate, available_modes)
+            else:
+                selected_mode = self._learned_gate_mode(
+                    game,
+                    z_state,
+                    beliefs,
+                    gate,
+                    available_modes,
+                )
             if selected_mode == "deceive" and can_deceive:
                 action, mode = deceive_action, "deceive"
             elif selected_mode == "safe":
@@ -1413,6 +1451,10 @@ class MASKLLMAgent:
             "dir_ready_threshold": self.dir_ready_threshold,
             "deceive_ready": bool(deceive_ready),
             "ffr_ready": bool(ffr_ready),
+            "deceive_attempted": bool(should_attempt_deceive),
+            "deceive_action": deceive_action,
+            "can_deceive": bool(can_deceive),
+            "deceive_block_reason": deceive_block_reason,
             "perceived_threat_of_me": round(perceived, 3),
             "forced_deceive": self.forced_deceive,
             "deceive_style": self.deceive_style,
@@ -1512,6 +1554,43 @@ class MASKLLMAgent:
             "selected_mode": selected,
             "raw": raw,
             "parsed": bool(match),
+        }
+        return selected
+
+    def _neural_gate_mode(
+        self,
+        game: MahjongGame,
+        z_state: Dict[int, Dict[str, Any]],
+        beliefs: Dict[str, Any],
+        gate: Dict[str, Any],
+        available_modes: List[str],
+    ) -> str:
+        selected = "exploit"
+        info: Dict[str, Any] = {}
+        parsed = False
+        try:
+            selected, info = self.neural_gate.predict(
+                game,
+                self.player_id,
+                z_state,
+                beliefs,
+                gate,
+                available_modes,
+            )
+            parsed = selected in available_modes
+        except Exception as exc:
+            info = {"error": repr(exc)}
+            selected = "exploit"
+        if selected not in available_modes:
+            selected = "exploit"
+            parsed = False
+        self._last_gate = {
+            "policy": "neural",
+            "used": True,
+            "parsed": parsed,
+            "available_modes": list(available_modes),
+            "selected_mode": selected,
+            **info,
         }
         return selected
 
@@ -1988,6 +2067,7 @@ class MASKLLMAgent:
                 "min_ukeire_ratio": self.threat_min_ukeire_ratio,
                 "max_shanten_regret": self.threat_max_shanten_regret,
                 "blocked": True,
+                "blocked_reason": "no_ffr_candidate",
             }
             return ""
         candidate_groups = [keep_mid, keep_any, relaxed_mid, relaxed_any]

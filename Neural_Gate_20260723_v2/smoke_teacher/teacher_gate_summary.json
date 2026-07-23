@@ -1,0 +1,21 @@
+{
+  "rows": 30,
+  "attempts": 31,
+  "target_counts": {
+    "exploit": 29,
+    "deceive": 1
+  },
+  "skipped": {
+    "target_unavailable_deceive": 1
+  },
+  "rows_path": "Neural_Gate_20260723_v2/smoke_teacher/teacher_gate_states.jsonl",
+  "config": {
+    "teacher_gate_policy": "continuous_v2",
+    "opponent_style": "neural",
+    "backend": "heuristic_fallback",
+    "sample_stride": 1,
+    "target_states": 30,
+    "max_games": 40,
+    "teacher_reward_margin": 10.0
+  }
+}

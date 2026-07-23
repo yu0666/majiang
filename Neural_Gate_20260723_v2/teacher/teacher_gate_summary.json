@@ -1,0 +1,29 @@
+{
+  "rows": 1379,
+  "attempts": 18548,
+  "target_counts": {
+    "exploit": 800,
+    "safe": 323,
+    "deceive": 256
+  },
+  "skipped": {
+    "target_unavailable_deceive": 1025,
+    "quota_full_exploit": 16144
+  },
+  "rows_path": "Neural_Gate_20260723_v2/teacher/teacher_gate_states.jsonl",
+  "config": {
+    "teacher_gate_policy": "continuous_v2",
+    "opponent_style": "neural",
+    "backend": "heuristic_fallback",
+    "sample_stride": 1,
+    "target_states": 1600,
+    "max_games": 3000,
+    "teacher_reward_margin": 10.0,
+    "quotas": {
+      "exploit": 800,
+      "safe": 400,
+      "deceive": 400
+    },
+    "quota_mode": true
+  }
+}

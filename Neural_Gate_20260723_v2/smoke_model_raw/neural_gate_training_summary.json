@@ -1,0 +1,64 @@
+{
+  "model_path": "Neural_Gate_20260723_v2/smoke_model_raw/neural_gate_policy.pth",
+  "data": {
+    "rows": 30,
+    "labels": {
+      "exploit": 29,
+      "deceive": 1
+    },
+    "skipped": {},
+    "reward": {
+      "return_clip": 0.0,
+      "hu_bonus": 5.0,
+      "fan_bonus": 3.0,
+      "dealin_penalty": 20.0,
+      "tail_alpha": 0.2,
+      "tail_risk_weight": 0.5,
+      "catastrophic_loss_threshold": 200.0,
+      "catastrophic_loss_penalty": 40.0
+    }
+  },
+  "best_metric": 20.0,
+  "final_eval": {
+    "loss": 0.9538899660110474,
+    "accuracy": 1.0,
+    "avg_cached_reward": 10.0
+  },
+  "history": [
+    {
+      "loss": 0.9538899660110474,
+      "accuracy": 1.0,
+      "avg_cached_reward": 10.0,
+      "epoch": 1,
+      "train_loss": 1.0665438771247864
+    },
+    {
+      "loss": 0.874910295009613,
+      "accuracy": 1.0,
+      "avg_cached_reward": 10.0,
+      "epoch": 2,
+      "train_loss": 0.9874611359376174
+    },
+    {
+      "loss": 0.7970338463783264,
+      "accuracy": 1.0,
+      "avg_cached_reward": 10.0,
+      "epoch": 3,
+      "train_loss": 0.9066847333541284
+    },
+    {
+      "loss": 0.7158792614936829,
+      "accuracy": 1.0,
+      "avg_cached_reward": 10.0,
+      "epoch": 4,
+      "train_loss": 0.8331876397132874
+    },
+    {
+      "loss": 0.6340197920799255,
+      "accuracy": 1.0,
+      "avg_cached_reward": 10.0,
+      "epoch": 5,
+      "train_loss": 0.762209993142348
+    }
+  ]
+}
